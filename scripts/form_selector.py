@@ -59,12 +59,14 @@ FORM_REGISTRY = {
     "SF054": ("申覆案申請表", "generators.appeal", "generate_sf054"),
     # Other
     "SF076": ("閱卷複印申請登記表", "generators.other", "generate_sf076"),
+    # Non-SF forms (required documents)
+    "PROPOSAL": ("中文計畫摘要", "generators.proposal", "generate_proposal_summary"),
 }
 
 # Phase → form selection rules
 PHASE_FORMS = {
     "new": {
-        "base": ["SF001", "SF002", "SF094"],
+        "base": ["SF001", "SF002", "SF094", "PROPOSAL"],
         "conditions": [
             (lambda c: c["study"]["review_type"] == "expedited", ["SF003"]),
             (lambda c: c["study"]["review_type"] == "exempt", ["SF004"]),

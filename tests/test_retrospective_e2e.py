@@ -40,7 +40,7 @@ def test_new_case_generates_all_forms(retro_config, output_dir):
         assert os.path.getsize(path) > 0, f"{fid} file is empty: {path}"
         generated.append(path)
 
-    assert len(generated) == 5  # SF001, SF002, SF094, SF003, SF005
+    assert len(generated) == 6  # SF001, SF002, SF094, PROPOSAL, SF003, SF005
 
 
 def test_closure_generates_all_forms(retro_config, output_dir):
