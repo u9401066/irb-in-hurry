@@ -2,6 +2,7 @@
 output/
 checklist.md
 reviewers/
+raw/
 
 # Python / uv
 __pycache__/

@@ -9,30 +9,40 @@ Automated KFSYSCC IRB form generation system. Generates DOCX forms from `config.
 
 ## Quick Start
 
+Users do NOT need to manually edit YAML. Just provide any free-form text:
+
+```
+User: "我想做一個回溯性研究，看2018-2023年肺癌免疫治療的甲狀腺功能，大約200人。我是腫瘤內科陳雅文。"
+```
+
+Claude will:
+1. Save raw text to `raw/`
+2. Distill into `config.yml` (see [distill.md](references/distill.md))
+3. Ask for any missing required fields (IRB number, dates)
+4. Run `make all` + `make review`
+5. Show dashboard and review opinions
+
+### Manual alternative
+
 ```bash
-# 1. Edit config.yml with study details
-# 2. Generate + convert + dashboard
+# If user prefers to edit YAML directly:
+vim config.yml
 make all
-# 3. Run simulated IRB reviewer
 make review
-# 4. Read reviewer opinions
-cat reviewers/review_*.md
 ```
 
 ## Workflow Overview
 
-When a user provides a study topic or proposal:
+When a user provides a study topic, proposal, or any text:
 
-1. **Classify study type** -- retrospective, prospective, clinical trial, genetic, multicenter
-2. **Determine review type** -- exempt, expedited, full_board
-3. **Set phase** -- new, amendment, continuing, closure, sae, etc.
-4. **Fill `config.yml`** with study metadata (see config schema reference)
-5. **Run `python scripts/generate_all.py`** -- creates DOCX forms in `output/`
-6. **Run `python scripts/convert.py`** -- creates PDF + PNG previews in `output/preview/`
-7. **Visual validation** -- Read each `output/preview/*.png` to verify layout
-8. **Run reviewer** -- `make review` for simulated IRB review → `reviewers/review_*.md`
-9. **Fix findings** -- Address required revisions, consider suggestions
-10. **Update checklist** -- Track manual steps via `checklist.md`
+1. **Save raw input** -- Write to `raw/proposal_YYYYMMDD.md`
+2. **Distill to config** -- Extract study type, PI, dates, subjects → `config.yml` (see [distill.md](references/distill.md))
+3. **Confirm with user** -- Ask about any missing required fields (IRB number, exact dates)
+4. **Generate forms** -- `make all` → DOCX + PDF + PNG previews + dashboard
+5. **Run reviewer** -- `make review` → `reviewers/review_*.md`
+6. **Visual validation** -- Read `output/preview/*.png` to verify layout
+7. **Fix findings** -- Address required revisions from reviewer
+8. **Update checklist** -- Track manual steps via `checklist.md`
 
 ## Study Type Classification
 
@@ -140,6 +150,8 @@ dashboard.sh                   # Terminal status dashboard
 - [Other Categories](references/other-categories.md) -- IB update, import, suspension, appeal
 - [Study Types & Routing](references/study-types.md) -- Classification logic
 - [Config Schema](references/config-schema.md) -- All config.yml fields
+- [Distill: Raw Text → Config](references/distill.md) -- How to extract config from free-form text
+- [Reviewer Criteria](references/reviewer.md) -- Simulated IRB review checklist
 
 ## Validation
 
