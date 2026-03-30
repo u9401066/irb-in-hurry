@@ -1,4 +1,4 @@
-.PHONY: help setup generate pdf preview dashboard checklist clean test all
+.PHONY: help setup generate pdf preview dashboard checklist review clean test all
 
 CONFIG := config.yml
 OUTPUT := output
@@ -23,6 +23,9 @@ dashboard: ## Show submission status
 
 checklist: ## View checklist
 	@cat checklist.md
+
+review: ## Run simulated IRB reviewer on generated forms
+	$(RUN) python scripts/reviewer.py $(CONFIG)
 
 test: ## Run tests
 	$(RUN) pytest tests/ -v

@@ -1,6 +1,7 @@
 # Generated artifacts
 output/
 checklist.md
+reviewers/
 
 # Python / uv
 __pycache__/

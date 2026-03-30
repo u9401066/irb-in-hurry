@@ -10,17 +10,13 @@ Automated KFSYSCC IRB form generation system. Generates DOCX forms from `config.
 ## Quick Start
 
 ```bash
-source .venv/bin/activate
-
 # 1. Edit config.yml with study details
-# 2. Generate forms
-python scripts/generate_all.py
-
-# 3. Convert to PDF + visual preview
-python scripts/convert.py
-
-# 4. Check status
-./dashboard.sh
+# 2. Generate + convert + dashboard
+make all
+# 3. Run simulated IRB reviewer
+make review
+# 4. Read reviewer opinions
+cat reviewers/review_*.md
 ```
 
 ## Workflow Overview
@@ -34,7 +30,9 @@ When a user provides a study topic or proposal:
 5. **Run `python scripts/generate_all.py`** -- creates DOCX forms in `output/`
 6. **Run `python scripts/convert.py`** -- creates PDF + PNG previews in `output/preview/`
 7. **Visual validation** -- Read each `output/preview/*.png` to verify layout
-8. **Update checklist** -- Track manual steps via `checklist.md`
+8. **Run reviewer** -- `make review` for simulated IRB review → `reviewers/review_*.md`
+9. **Fix findings** -- Address required revisions, consider suggestions
+10. **Update checklist** -- Track manual steps via `checklist.md`
 
 ## Study Type Classification
 
