@@ -150,6 +150,7 @@ dashboard.sh                   # Terminal status dashboard
 - [Other Categories](references/other-categories.md) -- IB update, import, suspension, appeal
 - [Study Types & Routing](references/study-types.md) -- Classification logic
 - [Config Schema](references/config-schema.md) -- All config.yml fields
+- [Brainstorm](references/brainstorm.md) -- Research topic ideas tailored to KFSYSCC + Taiwan epidemiology
 - [Distill: Raw Text → Config](references/distill.md) -- How to extract config from free-form text
 - [Reviewer Criteria](references/reviewer.md) -- Simulated IRB review checklist
 
