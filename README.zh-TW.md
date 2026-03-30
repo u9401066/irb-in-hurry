@@ -1,21 +1,65 @@
 # IRB-in-Hurry
 
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![Tests](https://img.shields.io/badge/tests-15%20passed-brightgreen.svg)](#測試)
+[![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#表單涵蓋範圍)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+
 [和信治癌中心醫院](https://www.kfsyscc.org/) IRB（人體試驗委員會）送審文件自動化產生工具。
 
 填入 YAML 設定檔中的研究資料，執行一行指令，即可產生所有必要的 IRB 送審表單 Word 文件 — 簽名後即可送出。
 
 [English README](README.md)
 
+---
+
+## 為什麼要做這個
+
+人體試驗委員會（IRB）是醫學研究史上最重要的發明之一。它誕生於紐倫堡審判（1947年）的灰燼之中，經由赫爾辛基宣言（1964年）與貝爾蒙特報告（1979年）確立制度化。IRB 的存在，是為了確保沒有任何人在未經知情同意、適當風險評估與倫理監督的情況下被納入研究。這些是不可妥協的原則。塔斯基吉事件、731 部隊，以及無數醫學實驗的黑暗歷史，都在提醒我們為什麼需要它。
+
+**但在某個時間點，官僚體制吞噬了初衷。**
+
+原本是為了保護受試者的制度，已經僵化成一場文書馬拉松。光是在[和信治癌中心醫院](https://www.kfsyscc.org/human/common_files/1)，研究者就必須面對 **11 類送審類別**、**43 種以上的表單** — 每一份都有自己的版本號、格式要求和勾選慣例。一個單純的回溯性病歷審查（最低風險、不接觸病人、去識別化資料）需要填 5 份表單。臨床試驗？加倍。修正計畫書裡的一個錯字？再來 4 份。
+
+研究者的時間是有限的。每一個花在把 IRB 編號複製貼上到 SF037 表頭的小時，就是一個沒有用來分析資料、撰寫論文、或 — 最重要的 — 照顧病人的小時。表單本身不是問題。問題是填寫它們是一種**無意義的、重複的、容易出錯的勞動**，而這種勞動應該由機器來做。
+
+這個專案不會繞過 IRB。不會跳過倫理審查。不會自動核准任何東西。它只是用你提供的資料，填好 IRB 要求的表單，讓你可以專注在真正需要人類判斷力的部分：研究設計、風險評估，以及保護你的受試者。
+
+> 「研究倫理在於設計，不在於文書。」
+
+**IRB-in-Hurry：因為你的時間應該花在科學上。**
+
+---
+
 ## 功能特色
 
 - **涵蓋 11 類 IRB 審查**：新案、修正案、複審、期中、結案、嚴重不良反應、主持人手冊、專案進口、其他、暫停/終止、申覆
-- **44+ 表單登錄**：依研究類型與送審階段自動選取所需表單
+- **43 個表單產生器**：依研究類型與送審階段自動選取所需表單
 - **智慧判斷**：回溯性研究自動選取簡易審查 + 免取得知情同意相關表單
 - **DOCX 產生**：使用 python-docx，標楷體字型、■/□ 勾選格式
 - **PDF + PNG 預覽**：轉檔後可視覺化驗證排版
 - **純文字清單**：■/□ 追蹤自動產生表單與手動步驟
 - **彩色儀表板**：一目了然的送審進度
 - **Claude Code 技能**：AI 輔助表單準備
+
+## 表單涵蓋範圍
+
+所有表單皆依據 [和信治癌中心醫院 IRB 網站](https://www.kfsyscc.org/human/common_files/1)實作：
+
+| 類別 | 名稱 | 表單 | 狀態 |
+|------|------|------|------|
+| 新案 | [新案審查](https://www.kfsyscc.org/human/common_files/1) | SF001, SF002, SF094, SF003-005 | ■ 完成 |
+| 複審 | [複審案審查](https://www.kfsyscc.org/human/common_files/2) | SF019 | ■ 完成 |
+| 修正 | [修正案審查](https://www.kfsyscc.org/human/common_files/3) | SF014, SF015, SF016 | ■ 完成 |
+| 期中 | [期中審查](https://www.kfsyscc.org/human/common_files/4) | SF030, SF031, SF032 | ■ 完成 |
+| 結案 | [結案審查](https://www.kfsyscc.org/human/common_files/5) | SF036, SF037, SF038, SF023 | ■ 完成 |
+| 不良反應 | [嚴重不良反應](https://www.kfsyscc.org/human/common_files/6) | SF079, SF044, SF074, SF080, SF024 | ■ 完成 |
+| 主持人手冊 | [主持人手冊](https://www.kfsyscc.org/human/common_files/7) | SF082, SF083, SF084, SF085 | ■ 完成 |
+| 專案進口 | [專案進口](https://www.kfsyscc.org/human/common_files/8) | SF066, SF067, SF068, SF093 | ■ 完成 |
+| 其他 | [其他表單](https://www.kfsyscc.org/human/common_files/9) | SF076 | ■ 完成 |
+| 暫停 | [計畫暫停](https://www.kfsyscc.org/human/common_files/10) | SF047, SF048 | ■ 完成 |
+| 申覆 | [申覆案審查](https://www.kfsyscc.org/human/common_files/11) | SF077, SF054 | ■ 完成 |
+| 同意書 | — | SF062, SF063, SF075, SF090, SF091, SF092 | ■ 完成 |
 
 ## 快速開始
 
@@ -95,6 +139,14 @@ phase: new                     # new|amendment|continuing|closure|sae|...
 | 臨床試驗（藥品） | 一般審查 | SF001、SF002、SF094、SF063、SF090、SF022 |
 | 基因研究 | 一般審查 | SF001、SF002、SF094、SF075 |
 
+## 測試
+
+```bash
+make test
+```
+
+15 項測試涵蓋表單選取邏輯、DOCX 內容驗證、清單產生，以及新案與結案的端對端產生測試。
+
 ## 系統需求
 
 - Python 3.10+
@@ -103,25 +155,13 @@ phase: new                     # new|amendment|continuing|closure|sae|...
 - [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF 轉換（`brew install --cask libreoffice`）
 - [poppler](https://poppler.freedesktop.org/) — PDF→PNG 預覽（`brew install poppler`）
 
-## 表單對照表
+## 參考資料
 
-| 送審階段 | 表單代號 | 表單名稱 |
-|---------|---------|---------|
-| 新案審查 | SF001 | 新案審查送審資料表 |
-| | SF002 | 研究計畫申請書 |
-| | SF094 | 顯著財務利益申報表 |
-| | SF003 | 簡易審查範圍檢核表 |
-| | SF005 | 免取得知情同意檢核表 |
-| 結案審查 | SF036 | 結案審查送審資料表 |
-| | SF037 | 結案報告摘要表 |
-| | SF038 | 結案報告書 |
-| | SF023 | 資料及安全性監測計畫報告書 |
-| 修正案審查 | SF014 | 修正案審查送審資料表 |
-| | SF015 | 修正案申請表 |
-| | SF016 | 修正前後對照表 |
-| 期中審查 | SF030 | 期中審查送審資料表 |
-| | SF031 | 期中報告書 |
-| | SF032 | 計畫展延申請表 |
+- [和信治癌中心醫院 IRB 表單下載](https://www.kfsyscc.org/human/common_files/1) — 官方表單
+- [紐倫堡守則（1947）](https://zh.wikipedia.org/wiki/%E7%BA%BD%E4%BC%A6%E5%A0%A1%E5%AE%88%E5%88%99) — 研究倫理基石
+- [赫爾辛基宣言（1964）](https://www.wma.net/policies-post/wma-declaration-of-helsinki/) — 醫學研究倫理原則
+- [貝爾蒙特報告（1979）](https://www.hhs.gov/ohrp/regulations-and-policy/belmont-report/) — 尊重、善行、正義
+- [聯邦法規第 45 篇第 46 部分](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/) — 美國人體試驗聯邦法規
 
 ## 授權條款
 
