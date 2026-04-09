@@ -59,4 +59,5 @@ def test_docx_to_pdf_supports_asset_aware_mcp_backend(tmp_path):
 
     assert pdf_path == str(output_dir / "IRB_SF001_新案審查送審資料表.pdf")
     assert os.path.exists(pdf_path)
-    assert open(pdf_path, "rb").read().startswith(b"%PDF-1.4")
+    with open(pdf_path, "rb") as f:
+        assert f.read().startswith(b"%PDF-1.4")

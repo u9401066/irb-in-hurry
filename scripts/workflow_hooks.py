@@ -38,16 +38,20 @@ def hook_context(config, **context):
 
 def run_command(command, context, timeout=120):
     """Run a formatted command without invoking a shell."""
-    formatted = command.format_map(context)
+    if isinstance(command, str):
+        args = shlex.split(command.format_map(context), posix=os.name != "nt")
+    else:
+        args = [str(part).format_map(context) for part in command]
+
     result = subprocess.run(
-        shlex.split(formatted),
+        args,
         capture_output=True,
         text=True,
         timeout=timeout,
     )
     if result.returncode != 0:
         stderr = result.stderr.strip() or result.stdout.strip() or "unknown error"
-        raise RuntimeError(f"{formatted} failed: {stderr}")
+        raise RuntimeError(f"{' '.join(args)} failed: {stderr}")
     return result
 
 

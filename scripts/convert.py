@@ -107,7 +107,12 @@ def pdf_to_png(pdf_path, preview_dir, dpi=150):
 
 
 def main(output_dir="output", config_path="config.yml"):
-    """Convert all DOCX files in output_dir to PDF and PNG previews."""
+    """Convert all DOCX files in output_dir to PDF and PNG previews.
+
+    Args:
+        output_dir: Directory containing generated DOCX files.
+        config_path: YAML config path for optional hooks and conversion settings.
+    """
     config = load_config(config_path) if os.path.exists(config_path) else {}
     preview_dir = os.path.join(output_dir, "preview")
     os.makedirs(preview_dir, exist_ok=True)
