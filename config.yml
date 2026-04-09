@@ -44,6 +44,24 @@ subjects:
 
 phase: new
 
+automation:
+  hook_timeout: 120
+  hooks:
+    before_generate: []
+    before_form_generate: []
+    after_form_generate: []
+    after_generate: []
+    before_convert: []
+    before_docx_to_pdf: []
+    after_docx_to_pdf: []
+    before_pdf_to_png: []
+    after_pdf_to_png: []
+    after_convert: []
+  conversion:
+    backend: libreoffice
+    command: ""
+    timeout: 120
+
 closure:
   extensions: 0
   amendments: 0

@@ -39,7 +39,7 @@ def generate_checklist(config, results, phase_zh, output_path="checklist.md"):
     lines.extend([
         "",
         "### PDF Conversion",
-        "□ Run `python scripts/convert.py` to generate PDFs and previews",
+        "□ Run `python scripts/convert.py` to generate PDFs and previews (configured hooks/backend apply automatically)",
         "",
         "### Manual Steps",
     ])

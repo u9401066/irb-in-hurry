@@ -10,9 +10,44 @@ import sys
 import glob
 import subprocess
 
+from scripts.docx_utils import load_config
+from scripts.workflow_hooks import (
+    asset_aware_command,
+    asset_aware_timeout,
+    conversion_backend,
+    expected_pdf_path,
+    hook_context,
+    run_command,
+    run_hooks,
+)
 
-def docx_to_pdf(docx_path, output_dir):
+
+def docx_to_pdf(docx_path, output_dir, config=None):
     """Convert DOCX to PDF using LibreOffice headless."""
+    backend = conversion_backend(config)
+    if backend == "asset_aware_mcp":
+        output_path = expected_pdf_path(docx_path, output_dir)
+        command = asset_aware_command(config)
+        if not command:
+            print("  ✗ Asset Aware MCP backend requires automation.conversion.command")
+            return None
+        try:
+            run_command(
+                command,
+                hook_context(
+                    config,
+                    input_path=docx_path,
+                    output_dir=output_dir,
+                    output_path=output_path,
+                    pdf_path=output_path,
+                ),
+                timeout=asset_aware_timeout(config),
+            )
+        except Exception as e:
+            print(f"  ✗ Asset Aware MCP conversion failed for {os.path.basename(docx_path)}: {e}")
+            return None
+        return output_path if os.path.exists(output_path) else None
+
     # Try common LibreOffice paths on macOS
     soffice_paths = [
         "/Applications/LibreOffice.app/Contents/MacOS/soffice",
@@ -68,10 +103,18 @@ def pdf_to_png(pdf_path, preview_dir, dpi=150):
     return None
 
 
-def main(output_dir="output"):
+def main(output_dir="output", config_path="config.yml"):
     """Convert all DOCX files in output_dir to PDF and PNG previews."""
+    config = load_config(config_path) if os.path.exists(config_path) else {}
     preview_dir = os.path.join(output_dir, "preview")
     os.makedirs(preview_dir, exist_ok=True)
+    run_hooks(
+        config,
+        "before_convert",
+        config_path=config_path,
+        output_dir=output_dir,
+        preview_dir=preview_dir,
+    )
 
     docx_files = sorted(glob.glob(os.path.join(output_dir, "*.docx")))
     if not docx_files:
@@ -88,19 +131,66 @@ def main(output_dir="output"):
         basename = os.path.basename(docx_path)
 
         # DOCX → PDF
-        pdf_path = docx_to_pdf(docx_path, output_dir)
+        run_hooks(
+            config,
+            "before_docx_to_pdf",
+            config_path=config_path,
+            input_path=docx_path,
+            output_dir=output_dir,
+            preview_dir=preview_dir,
+        )
+        pdf_path = docx_to_pdf(docx_path, output_dir, config=config)
         if pdf_path:
             print(f"  ■ PDF: {basename}")
             pdf_count += 1
+            run_hooks(
+                config,
+                "after_docx_to_pdf",
+                config_path=config_path,
+                input_path=docx_path,
+                output_dir=output_dir,
+                preview_dir=preview_dir,
+                output_path=pdf_path,
+                pdf_path=pdf_path,
+            )
 
             # PDF → PNG preview
+            run_hooks(
+                config,
+                "before_pdf_to_png",
+                config_path=config_path,
+                input_path=docx_path,
+                output_dir=output_dir,
+                preview_dir=preview_dir,
+                pdf_path=pdf_path,
+            )
             png_path = pdf_to_png(pdf_path, preview_dir)
             if png_path:
                 print(f"  ■ PNG: {os.path.basename(png_path)}")
                 png_count += 1
+                run_hooks(
+                    config,
+                    "after_pdf_to_png",
+                    config_path=config_path,
+                    input_path=docx_path,
+                    output_dir=output_dir,
+                    preview_dir=preview_dir,
+                    pdf_path=pdf_path,
+                    png_path=png_path,
+                    output_path=png_path,
+                )
         else:
             print(f"  □ PDF: {basename} — skipped")
 
+    run_hooks(
+        config,
+        "after_convert",
+        config_path=config_path,
+        output_dir=output_dir,
+        preview_dir=preview_dir,
+        pdf_count=pdf_count,
+        png_count=png_count,
+    )
     print(f"\n{'═' * 40}")
     print(f"  PDFs:     {pdf_count}/{len(docx_files)}")
     print(f"  Previews: {png_count}/{len(docx_files)}")
@@ -109,4 +199,5 @@ def main(output_dir="output"):
 
 if __name__ == "__main__":
     output_dir = sys.argv[1] if len(sys.argv) > 1 else "output"
-    main(output_dir)
+    config_path = sys.argv[2] if len(sys.argv) > 2 else "config.yml"
+    main(output_dir, config_path)
