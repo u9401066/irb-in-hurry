@@ -191,7 +191,7 @@ make test
 - `before_generate`、`before_form_generate`、`after_form_generate`、`after_generate`
 - `before_convert`、`before_docx_to_pdf`、`after_docx_to_pdf`、`before_pdf_to_png`、`after_pdf_to_png`、`after_convert`
 
-每個 hook 都可使用 `{config_path}`、`{output_dir}`、`{input_path}`、`{output_path}`、`{phase}`、`{irb_no}` 等 placeholder。
+每個 hook 執行時都會帶入環境變數，例如 `IRB_HOOK_CONFIG_PATH`、`IRB_HOOK_OUTPUT_DIR`、`IRB_HOOK_INPUT_PATH`、`IRB_HOOK_OUTPUT_PATH`、`IRB_HOOK_PHASE`、`IRB_HOOK_IRB_NO`。
 
 若要把 DOCX→PDF 轉檔交給 [u9401066/asset-aware-mcp](https://github.com/u9401066/asset-aware-mcp)，可加入：
 
@@ -199,7 +199,7 @@ make test
 automation:
   conversion:
     backend: asset_aware_mcp
-    command: "your asset-aware-mcp command using {input_path} and {output_path}"
+    command: "your asset-aware-mcp command using IRB_HOOK_INPUT_PATH and IRB_HOOK_OUTPUT_PATH"
 ```
 
 若維持 `libreoffice`，則仍使用原本的 LibreOffice 轉檔流程。

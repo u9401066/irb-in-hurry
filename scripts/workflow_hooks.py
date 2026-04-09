@@ -3,14 +3,6 @@ import os
 import shlex
 import subprocess
 
-
-class SafeFormatDict(dict):
-    """Return empty strings for missing placeholders."""
-
-    def __missing__(self, key):
-        return ""
-
-
 def _automation(config):
     return config.get("automation", {}) if config else {}
 
@@ -25,7 +17,7 @@ def hook_commands(config, hook_name):
 
 
 def hook_context(config, **context):
-    """Build shared placeholder context for hooks and converters."""
+    """Build shared runtime context for hooks and converters."""
     data = {
         "phase": config.get("phase", "") if config else "",
         "irb_no": config.get("study", {}).get("irb_no", "") if config else "",
@@ -33,28 +25,30 @@ def hook_context(config, **context):
     }
     for key, value in context.items():
         data[key] = "" if value is None else str(value)
-    return SafeFormatDict(data)
+    return data
 
 
 def run_command(command, context, timeout=120):
     """Run a formatted command without invoking a shell."""
     if isinstance(command, str):
-        args = [
-            part.format_map(context)
-            for part in shlex.split(command, posix=os.name != "nt")
-        ]
+        args = shlex.split(command, posix=os.name != "nt")
     else:
-        args = [str(part).format_map(context) for part in command]
+        args = [str(part) for part in command]
+
+    env = os.environ.copy()
+    for key, value in context.items():
+        env[f"IRB_HOOK_{key.upper()}"] = value
 
     result = subprocess.run(
         args,
         capture_output=True,
         text=True,
         timeout=timeout,
+        env=env,
     )
     if result.returncode != 0:
         stderr = result.stderr.strip() or result.stdout.strip() or "unknown error"
-        raise RuntimeError(f"{' '.join(args)} failed: {stderr}")
+        raise RuntimeError(f"{args[0]} failed: {stderr}")
     return result
 
 

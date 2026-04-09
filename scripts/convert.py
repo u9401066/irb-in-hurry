@@ -32,7 +32,10 @@ def docx_to_pdf(docx_path, output_dir, config=None):
         output_path = expected_pdf_path(docx_path, output_dir)
         command = asset_aware_command(config)
         if not command:
-            print("  ✗ Asset Aware MCP backend requires config.yml automation.conversion.command")
+            print(
+                "  ✗ Configuration error: automation.conversion.command must be set "
+                "when backend=asset_aware_mcp. See README for examples."
+            )
             return None
         try:
             run_command(
@@ -113,7 +116,12 @@ def main(output_dir="output", config_path="config.yml"):
         output_dir: Directory containing generated DOCX files.
         config_path: YAML config path for optional hooks and conversion settings.
     """
-    config = load_config(config_path) if os.path.exists(config_path) else {}
+    if os.path.exists(config_path):
+        config = load_config(config_path)
+    elif config_path == "config.yml":
+        config = {}
+    else:
+        raise FileNotFoundError(f"Config not found: {config_path}")
     preview_dir = os.path.join(output_dir, "preview")
     os.makedirs(preview_dir, exist_ok=True)
     run_hooks(

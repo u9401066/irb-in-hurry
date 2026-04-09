@@ -1,4 +1,5 @@
 """Tests for optional workflow hooks and conversion backends."""
+import json
 import os
 import sys
 
@@ -12,10 +13,14 @@ from scripts.generate_all import main as generate_all_main
 
 
 def write_text_command(target, content):
-    return (
-        "python -c "
-        f"\"from pathlib import Path; Path(r'{target}').write_text(r'{content}', encoding='utf-8')\""
-    )
+    return [
+        "python",
+        "-c",
+        (
+            "import os; from pathlib import Path; "
+            f"Path({json.dumps(str(target))}).write_text({content}, encoding='utf-8')"
+        ),
+    ]
 
 
 def test_generate_all_runs_configured_hooks(tmp_path):
@@ -26,8 +31,18 @@ def test_generate_all_runs_configured_hooks(tmp_path):
 
     config["automation"] = {
         "hooks": {
-            "before_generate": [write_text_command(before_marker, "{phase}|{irb_no}")],
-            "after_generate": [write_text_command(after_marker, "{generated}|{errors}|{missing}")],
+            "before_generate": [
+                write_text_command(
+                    before_marker,
+                    "os.environ['IRB_HOOK_PHASE'] + '|' + os.environ['IRB_HOOK_IRB_NO']",
+                ),
+            ],
+            "after_generate": [
+                write_text_command(
+                    after_marker,
+                    "os.environ['IRB_HOOK_GENERATED'] + '|' + os.environ['IRB_HOOK_ERRORS'] + '|' + os.environ['IRB_HOOK_MISSING']",
+                ),
+            ],
         }
     }
 
@@ -53,7 +68,11 @@ def test_docx_to_pdf_supports_asset_aware_mcp_backend(tmp_path):
         "automation": {
             "conversion": {
                 "backend": "asset_aware_mcp",
-                "command": 'python -c "from pathlib import Path; Path(r\'{output_path}\').write_bytes(b\'%PDF-1.4\\n%%EOF\')"',
+                "command": [
+                    "python",
+                    "-c",
+                    "import os; from pathlib import Path; Path(os.environ['IRB_HOOK_OUTPUT_PATH']).write_bytes(b'%PDF-1.4\\n%%EOF')",
+                ],
             }
         }
     }

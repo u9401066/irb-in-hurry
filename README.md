@@ -202,7 +202,7 @@ Optional hooks let you enforce each document-processing stage from `config.yml`:
 - `before_generate`, `before_form_generate`, `after_form_generate`, `after_generate`
 - `before_convert`, `before_docx_to_pdf`, `after_docx_to_pdf`, `before_pdf_to_png`, `after_pdf_to_png`, `after_convert`
 
-Each hook accepts one or more commands and receives placeholders such as `{config_path}`, `{output_dir}`, `{input_path}`, `{output_path}`, `{phase}`, and `{irb_no}`.
+Each hook receives runtime data through environment variables such as `IRB_HOOK_CONFIG_PATH`, `IRB_HOOK_OUTPUT_DIR`, `IRB_HOOK_INPUT_PATH`, `IRB_HOOK_OUTPUT_PATH`, `IRB_HOOK_PHASE`, and `IRB_HOOK_IRB_NO`.
 
 To route DOCX→PDF conversion through [u9401066/asset-aware-mcp](https://github.com/u9401066/asset-aware-mcp), set:
 
@@ -210,7 +210,7 @@ To route DOCX→PDF conversion through [u9401066/asset-aware-mcp](https://github
 automation:
   conversion:
     backend: asset_aware_mcp
-    command: "your asset-aware-mcp command using {input_path} and {output_path}"
+    command: "your asset-aware-mcp command using IRB_HOOK_INPUT_PATH and IRB_HOOK_OUTPUT_PATH"
 ```
 
 When `backend` is left as `libreoffice`, the existing LibreOffice conversion path is used unchanged.
