@@ -39,7 +39,10 @@ def hook_context(config, **context):
 def run_command(command, context, timeout=120):
     """Run a formatted command without invoking a shell."""
     if isinstance(command, str):
-        args = shlex.split(command.format_map(context), posix=os.name != "nt")
+        args = [
+            part.format_map(context)
+            for part in shlex.split(command, posix=os.name != "nt")
+        ]
     else:
         args = [str(part).format_map(context) for part in command]
 

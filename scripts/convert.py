@@ -32,7 +32,7 @@ def docx_to_pdf(docx_path, output_dir, config=None):
         output_path = expected_pdf_path(docx_path, output_dir)
         command = asset_aware_command(config)
         if not command:
-            print("  ✗ Asset Aware MCP backend requires automation.conversion.command")
+            print("  ✗ Asset Aware MCP backend requires config.yml automation.conversion.command")
             return None
         try:
             run_command(

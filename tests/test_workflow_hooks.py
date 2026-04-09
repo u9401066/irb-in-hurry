@@ -11,6 +11,13 @@ from scripts.docx_utils import load_config
 from scripts.generate_all import main as generate_all_main
 
 
+def write_text_command(target, content):
+    return (
+        "python -c "
+        f"\"from pathlib import Path; Path(r'{target}').write_text(r'{content}', encoding='utf-8')\""
+    )
+
+
 def test_generate_all_runs_configured_hooks(tmp_path):
     """Generate forms with hooks enabled and verify hook outputs."""
     config = load_config("tests/fixtures/sample_retrospective.yml")
@@ -19,12 +26,8 @@ def test_generate_all_runs_configured_hooks(tmp_path):
 
     config["automation"] = {
         "hooks": {
-            "before_generate": [
-                f'python -c "from pathlib import Path; Path(r\'{before_marker}\').write_text(r\'{{phase}}|{{irb_no}}\', encoding=\'utf-8\')"',
-            ],
-            "after_generate": [
-                f'python -c "from pathlib import Path; Path(r\'{after_marker}\').write_text(r\'{{generated}}|{{errors}}|{{missing}}\', encoding=\'utf-8\')"',
-            ],
+            "before_generate": [write_text_command(before_marker, "{phase}|{irb_no}")],
+            "after_generate": [write_text_command(after_marker, "{generated}|{errors}|{missing}")],
         }
     }
 
