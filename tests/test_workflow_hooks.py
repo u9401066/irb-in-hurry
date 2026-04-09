@@ -12,13 +12,17 @@ from scripts.docx_utils import load_config
 from scripts.generate_all import main as generate_all_main
 
 
-def write_text_command(target, content):
+def write_env_values_command(target, *env_names):
+    expression = " + '|' + ".join(
+        f"os.environ[{json.dumps(name)}]"
+        for name in env_names
+    )
     return [
         "python",
         "-c",
         (
             "import os; from pathlib import Path; "
-            f"Path({json.dumps(str(target))}).write_text({content}, encoding='utf-8')"
+            f"Path({json.dumps(str(target))}).write_text({expression}, encoding='utf-8')"
         ),
     ]
 
@@ -32,15 +36,18 @@ def test_generate_all_runs_configured_hooks(tmp_path):
     config["automation"] = {
         "hooks": {
             "before_generate": [
-                write_text_command(
+                write_env_values_command(
                     before_marker,
-                    "os.environ['IRB_HOOK_PHASE'] + '|' + os.environ['IRB_HOOK_IRB_NO']",
+                    "IRB_HOOK_PHASE",
+                    "IRB_HOOK_IRB_NO",
                 ),
             ],
             "after_generate": [
-                write_text_command(
+                write_env_values_command(
                     after_marker,
-                    "os.environ['IRB_HOOK_GENERATED'] + '|' + os.environ['IRB_HOOK_ERRORS'] + '|' + os.environ['IRB_HOOK_MISSING']",
+                    "IRB_HOOK_GENERATED",
+                    "IRB_HOOK_ERRORS",
+                    "IRB_HOOK_MISSING",
                 ),
             ],
         }

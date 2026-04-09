@@ -32,10 +32,7 @@ def docx_to_pdf(docx_path, output_dir, config=None):
         output_path = expected_pdf_path(docx_path, output_dir)
         command = asset_aware_command(config)
         if not command:
-            print(
-                "  ✗ Configuration error: automation.conversion.command must be set "
-                "when backend=asset_aware_mcp. See README for examples."
-            )
+            print("  ✗ Configuration error: automation.conversion.command must be set when backend=asset_aware_mcp. See README for examples.")
             return None
         try:
             run_command(

@@ -3,6 +3,9 @@ import os
 import shlex
 import subprocess
 
+UNKNOWN_ERROR = "unknown error"
+
+
 def _automation(config):
     return config.get("automation", {}) if config else {}
 
@@ -47,7 +50,7 @@ def run_command(command, context, timeout=120):
         env=env,
     )
     if result.returncode != 0:
-        stderr = result.stderr.strip() or result.stdout.strip() or "unknown error"
+        stderr = result.stderr.strip() or result.stdout.strip() or UNKNOWN_ERROR
         raise RuntimeError(f"{args[0]} failed: {stderr}")
     return result
 
