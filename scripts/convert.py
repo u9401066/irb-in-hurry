@@ -10,6 +10,9 @@ import sys
 import glob
 import subprocess
 
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from scripts.docx_utils import load_config
 from scripts.workflow_hooks import (
     asset_aware_command,
