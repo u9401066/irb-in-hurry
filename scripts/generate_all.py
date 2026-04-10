@@ -10,12 +10,14 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scripts.docx_utils import load_config
 from scripts.form_selector import select_forms, get_generator, FORM_REGISTRY
 from scripts.checklist import generate_checklist
+from scripts.workflow_hooks import run_hooks
 
 
 def main(config_path="config.yml", output_dir="output"):
     """Generate all required IRB forms based on config."""
     config = load_config(config_path)
     os.makedirs(output_dir, exist_ok=True)
+    run_hooks(config, "before_generate", config_path=config_path, output_dir=output_dir)
 
     # Phase name mapping
     phase_names = {
@@ -55,11 +57,28 @@ def main(config_path="config.yml", output_dir="output"):
 
         mod_path, func_name = gen_info
         try:
+            run_hooks(
+                config,
+                "before_form_generate",
+                config_path=config_path,
+                output_dir=output_dir,
+                form_id=fid,
+                form_name_zh=name_zh,
+            )
             mod = importlib.import_module(f"scripts.{mod_path}")
             gen_func = getattr(mod, func_name)
             path = gen_func(config, output_dir)
             print(f"  ■ {fid} {name_zh} → {os.path.basename(path)}")
             results.append((fid, name_zh, path, "generated"))
+            run_hooks(
+                config,
+                "after_form_generate",
+                config_path=config_path,
+                output_dir=output_dir,
+                form_id=fid,
+                form_name_zh=name_zh,
+                output_path=path,
+            )
         except Exception as e:
             print(f"  ✗ {fid} {name_zh} — ERROR: {e}")
             results.append((fid, name_zh, None, "error"))
@@ -72,6 +91,16 @@ def main(config_path="config.yml", output_dir="output"):
     generated = sum(1 for _, _, _, s in results if s == "generated")
     errors = sum(1 for _, _, _, s in results if s == "error")
     missing = sum(1 for _, _, _, s in results if s == "missing")
+    run_hooks(
+        config,
+        "after_generate",
+        config_path=config_path,
+        output_dir=output_dir,
+        checklist_path=checklist_path,
+        generated=generated,
+        errors=errors,
+        missing=missing,
+    )
     print(f"\n{'═' * 46}")
     print(f"  Generated: {generated}  Errors: {errors}  Missing: {missing}")
     print(f"  Output:    {os.path.abspath(output_dir)}/")

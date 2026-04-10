@@ -41,6 +41,9 @@
 - **純文字清單**：■/□ 追蹤自動產生表單與手動步驟
 - **彩色儀表板**：一目了然的送審進度
 - **Claude Code 技能**：AI 輔助表單準備
+- **GitHub Copilot 指引與 setup workflow**：讓 Copilot cloud agent 可直接使用
+- **設定檔驅動的 workflow hooks**：完整約束文件產生與轉檔步驟
+- **Asset Aware MCP 轉檔後端**：可將文件輸出交給自訂命令轉成正確格式
 
 ## 表單涵蓋範圍
 
@@ -128,6 +131,25 @@ subjects:
   consent_waiver: true          # 回溯性研究自動設為 true
 
 phase: new                     # new|amendment|continuing|closure|sae|...
+
+automation:
+  hook_timeout: 120
+  hooks:
+    before_generate:
+      - 'python -c "print(\"generate 前驗證\")"'
+    before_form_generate: []
+    after_form_generate: []
+    after_generate: []
+    before_convert: []
+    before_docx_to_pdf: []
+    after_docx_to_pdf: []
+    before_pdf_to_png: []
+    after_pdf_to_png: []
+    after_convert: []
+  conversion:
+    backend: libreoffice       # libreoffice|asset_aware_mcp
+    command: ""                # backend=asset_aware_mcp 時必填
+    timeout: 120
 ```
 
 ### 研究類型 → 表單選取
@@ -154,6 +176,33 @@ make test
 - [PyYAML](https://pyyaml.org/) — 設定檔解析
 - [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF 轉換（`brew install --cask libreoffice`）
 - [poppler](https://poppler.freedesktop.org/) — PDF→PNG 預覽（`brew install poppler`）
+
+## GitHub Copilot 整合
+
+此專案現在也提供 GitHub Copilot 專用設定：
+
+- [`.github/copilot-instructions.md`](.github/copilot-instructions.md) 提供與 Claude 類似的專案規範
+- [`.github/workflows/copilot-setup-steps.yml`](.github/workflows/copilot-setup-steps.yml) 會為 Copilot cloud agent 預先安裝 `uv` 並同步相依套件
+
+## Workflow Hooks 與 Asset Aware MCP
+
+`config.yml` 中可選擇設定以下 hooks，完整約束文件流程：
+
+- `before_generate`、`before_form_generate`、`after_form_generate`、`after_generate`
+- `before_convert`、`before_docx_to_pdf`、`after_docx_to_pdf`、`before_pdf_to_png`、`after_pdf_to_png`、`after_convert`
+
+每個 hook 執行時都會帶入環境變數，例如 `IRB_HOOK_CONFIG_PATH`、`IRB_HOOK_OUTPUT_DIR`、`IRB_HOOK_INPUT_PATH`、`IRB_HOOK_OUTPUT_PATH`、`IRB_HOOK_PHASE`、`IRB_HOOK_IRB_NO`。
+
+若要把 DOCX→PDF 轉檔交給 [u9401066/asset-aware-mcp](https://github.com/u9401066/asset-aware-mcp)，可加入：
+
+```yaml
+automation:
+  conversion:
+    backend: asset_aware_mcp
+    command: "your asset-aware-mcp command using IRB_HOOK_INPUT_PATH and IRB_HOOK_OUTPUT_PATH"
+```
+
+若維持 `libreoffice`，則仍使用原本的 LibreOffice 轉檔流程。
 
 ## 參考資料
 

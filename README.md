@@ -41,6 +41,9 @@ This project does not bypass the IRB. It does not skip ethical review. It does n
 - **Plain-text checklist** (■/□) tracking both generated forms and manual steps
 - **Color-coded dashboard** for submission status overview
 - **Claude Code skill** for AI-assisted form preparation
+- **GitHub Copilot instructions + setup workflow** for cloud-agent compatibility
+- **Config-driven workflow hooks** to enforce generation/conversion steps
+- **Asset Aware MCP conversion backend** via configurable output commands
 
 ## Form Coverage
 
@@ -128,6 +131,25 @@ subjects:
   consent_waiver: true       # auto-set for retrospective
 
 phase: new                   # new|amendment|continuing|closure|sae|...
+
+automation:
+  hook_timeout: 120
+  hooks:
+    before_generate:
+      - 'python -c "print(\"validate config before generation\")"'
+    before_form_generate: []
+    after_form_generate: []
+    after_generate: []
+    before_convert: []
+    before_docx_to_pdf: []
+    after_docx_to_pdf: []
+    before_pdf_to_png: []
+    after_pdf_to_png: []
+    after_convert: []
+  conversion:
+    backend: libreoffice      # libreoffice|asset_aware_mcp
+    command: ""               # required when backend=asset_aware_mcp
+    timeout: 120
 ```
 
 See [config-schema reference](.claude/skills/irb/references/config-schema.md) for all fields.
@@ -165,6 +187,33 @@ This project includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that en
 - Auto-fill `config.yml` based on your study details
 - Generate and validate all required forms
 - Guide you through manual steps
+
+## GitHub Copilot Integration
+
+This repo now also includes GitHub Copilot-specific setup:
+
+- [`.github/copilot-instructions.md`](.github/copilot-instructions.md) gives Copilot the same repo-specific workflow constraints as Claude
+- [`.github/workflows/copilot-setup-steps.yml`](.github/workflows/copilot-setup-steps.yml) preinstalls `uv` and syncs dependencies for Copilot cloud agent sessions
+
+## Workflow Hooks and Asset Aware MCP
+
+Optional hooks let you enforce each document-processing stage from `config.yml`:
+
+- `before_generate`, `before_form_generate`, `after_form_generate`, `after_generate`
+- `before_convert`, `before_docx_to_pdf`, `after_docx_to_pdf`, `before_pdf_to_png`, `after_pdf_to_png`, `after_convert`
+
+Each hook receives runtime data through environment variables such as `IRB_HOOK_CONFIG_PATH`, `IRB_HOOK_OUTPUT_DIR`, `IRB_HOOK_INPUT_PATH`, `IRB_HOOK_OUTPUT_PATH`, `IRB_HOOK_PHASE`, and `IRB_HOOK_IRB_NO`.
+
+To route DOCX→PDF conversion through [u9401066/asset-aware-mcp](https://github.com/u9401066/asset-aware-mcp), set:
+
+```yaml
+automation:
+  conversion:
+    backend: asset_aware_mcp
+    command: "your asset-aware-mcp command using IRB_HOOK_INPUT_PATH and IRB_HOOK_OUTPUT_PATH"
+```
+
+When `backend` is left as `libreoffice`, the existing LibreOffice conversion path is used unchanged.
 
 ## Project Structure
 
