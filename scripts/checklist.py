@@ -2,6 +2,8 @@
 import os
 from datetime import date
 
+from scripts.institution_profiles import get_institution_profile
+
 
 def generate_checklist(config, results, phase_zh, output_path="checklist.md"):
     """Generate checklist.md from generation results.
@@ -12,6 +14,7 @@ def generate_checklist(config, results, phase_zh, output_path="checklist.md"):
         phase_zh: Chinese phase name
         output_path: Where to write checklist
     """
+    profile = get_institution_profile(config)
     irb_no = config["study"]["irb_no"]
     title_zh = config["study"]["title_zh"]
     today = date.today().strftime("%Y-%m-%d")
@@ -72,7 +75,7 @@ def generate_checklist(config, results, phase_zh, output_path="checklist.md"):
     lines.extend([
         "",
         "### Submission",
-        "□ Email electronic copies to irb@kfsyscc.org",
+        f"□ Email electronic copies to {profile['submission_email']}",
         "□ Submit paper copies (1 original + 1 copy) to IRB office",
         "",
         "---",

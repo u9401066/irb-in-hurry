@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# Lightweight make-compatible wrapper for environments without GNU make.
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT_DIR"
+
+CONFIG="${IRB_CONFIG:-config.yml}"
+OUTPUT="${IRB_OUTPUT:-output}"
+
+if command -v uv >/dev/null 2>&1; then
+  PY_CMD=(uv run python)
+elif command -v python3 >/dev/null 2>&1; then
+  PY_CMD=(python3)
+else
+  echo "❌ Neither uv nor python3 was found in PATH."
+  exit 1
+fi
+
+run_python() {
+  "${PY_CMD[@]}" "$@"
+}
+
+set_phase_config() {
+  local phase="$1"
+  local phases_json="$2"
+
+  run_python - "$CONFIG" "$phase" "$phases_json" <<'PY'
+import json
+import sys
+import yaml
+
+config_path = sys.argv[1]
+phase = sys.argv[2]
+phases = json.loads(sys.argv[3])
+
+with open(config_path, "r", encoding="utf-8") as f:
+    config = yaml.safe_load(f) or {}
+
+config["phase"] = phase
+harness = config.setdefault("harness", {})
+harness["group_by_phase"] = True
+harness["phases"] = phases
+
+with open(config_path, "w", encoding="utf-8") as f:
+    yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+PY
+}
+
+run_all() {
+  run_python scripts/generate_all.py "$CONFIG"
+  run_python scripts/convert.py "$OUTPUT" "$CONFIG"
+  ./dashboard.sh "$CONFIG"
+}
+
+usage() {
+  cat <<'EOF'
+Usage:
+  ./bin/irb new           # Set single-phase new and run generate + convert + dashboard
+  ./bin/irb kmuh-seq       # Set KMUH pipeline: new -> amendment -> continuing -> closure
+  ./bin/irb report-kmuh    # Show phase-by-phase coverage report
+  ./bin/irb <make target>  # Fallback: try `make <target>` when make exists
+EOF
+}
+
+case "${1:-}" in
+  "")
+    usage
+    ;;
+  new)
+    set_phase_config "new" '["new"]'
+    run_all
+    ;;
+  kmuh-seq)
+    set_phase_config "new" '["new", "amendment", "continuing", "closure"]'
+    run_all
+    ;;
+  report-kmuh)
+    run_python scripts/report_kmuh.py "$CONFIG"
+    ;;
+  help|-h|--help)
+    usage
+    ;;
+  *)
+    if command -v make >/dev/null 2>&1; then
+      make "$@"
+      exit 0
+    fi
+    echo "❌ make not found and command '$1' is not one of: new, kmuh-seq, report-kmuh"
+    usage
+    exit 1
+    ;;
+esac

@@ -3,6 +3,8 @@
 Returns ordered list of (form_id, form_name_zh, generator_module, generator_func).
 """
 
+from scripts.institution_profiles import normalize_institution_id
+
 # Form registry: form_id → (Chinese name, generator module path, function name)
 FORM_REGISTRY = {
     # New case (新案審查)
@@ -63,8 +65,11 @@ FORM_REGISTRY = {
     "PROPOSAL": ("中文計畫摘要", "generators.proposal", "generate_proposal_summary"),
 }
 
-# Phase → form selection rules
-PHASE_FORMS = {
+# KFSYSCC/KMU baseline: same form-selection behavior and output set.
+# KMUH is aligned here in full by default, so phase routing is explicitly
+# represented instead of silently falling back.
+# 1) Base rule set (shared by the default institutional profiles in this repo).
+KFSYSCC_PHASE_FORMS = {
     "new": {
         "base": ["SF001", "SF002", "SF094", "PROPOSAL"],
         "conditions": [
@@ -129,6 +134,28 @@ PHASE_FORMS = {
     },
 }
 
+INSTITUTION_PHASE_FORMS = {
+    "kfsyscc": KFSYSCC_PHASE_FORMS,
+    "kmuh": KFSYSCC_PHASE_FORMS,
+}
+
+PHASE_FORMS = KFSYSCC_PHASE_FORMS
+
+
+def _effective_phase_rules(phase_rules, institution_id):
+    """Return phase rules for institution, defaulting to KFSYSCC behavior."""
+    if institution_id in INSTITUTION_PHASE_FORMS:
+        return INSTITUTION_PHASE_FORMS[institution_id]
+    return phase_rules
+
+
+def get_institution_phase_rules(config_or_institution):
+    """Get phase rules for a given institution."""
+    institution_id = normalize_institution_id(config_or_institution)
+    return _effective_phase_rules(PHASE_FORMS, institution_id)
+
+
+
 # Auto-infer settings for retrospective studies
 def _apply_study_type_defaults(config):
     """Auto-set fields based on study type."""
@@ -139,18 +166,19 @@ def _apply_study_type_defaults(config):
     return config
 
 
-def select_forms(config):
+def select_forms(config, institution=None):
     """Select required forms based on config.
 
     Returns: list of (form_id, form_name_zh) tuples in submission order.
     """
     config = _apply_study_type_defaults(config)
     phase = config["phase"]
+    ruleset = get_institution_phase_rules(institution if institution is not None else config)
 
-    if phase not in PHASE_FORMS:
-        raise ValueError(f"Unknown phase: {phase}. Valid: {list(PHASE_FORMS.keys())}")
+    if phase not in ruleset:
+        raise ValueError(f"Unknown phase: {phase}. Valid: {list(ruleset.keys())}")
 
-    rules = PHASE_FORMS[phase]
+    rules = ruleset[phase]
     selected = list(rules["base"])
 
     for condition_fn, form_ids in rules["conditions"]:

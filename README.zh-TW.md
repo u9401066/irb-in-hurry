@@ -76,6 +76,16 @@ make setup
 #    （或複製範例設定）
 cp tests/fixtures/sample_retrospective.yml config.yml
 
+# 2.5 KMUH 對齊建議（建議先跑新案，再進修正 / 期中 / 結案）
+#    institution: kmuh
+#    harness:
+#      group_by_phase: true
+#      phases:
+#        - new
+#        - amendment
+#        - continuing
+#        - closure
+
 # 3. 一鍵產生所有文件
 make all
 ```
@@ -97,19 +107,33 @@ make all
 | `make closure` | 切換至結案審查 + 產生 |
 | `make amendment` | 切換至修正案審查 + 產生 |
 | `make continuing` | 切換至期中審查 + 產生 |
+| `make kmuh-seq` | 套用 KMUH 全流程（新案→修正→期中→結案）+ 產生 |
+
+若沒有 `make`，也可以用：
+
+```bash
+./bin/irb new
+./bin/irb kmuh-seq
+./bin/irb report-kmuh
+```
 
 ### 工作流程
 
 ```
-config.yml → generate_all.py → output/*.docx → convert.py → output/*.pdf
-                                                           → output/preview/*.png
+config.yml → generate_all.py → output/<phase>/*.docx → convert.py → output/<phase>/*.pdf
+                                                           → output/<phase>/preview/*.png
                                   checklist.md ← checklist.py
 ```
 
+若啟用 harness，檔案會輸出到 `output/<phase>/` 子目錄。
+
+KMUH 建議流程順序：
+`新案` → `修正案` → `期中審查` → `結案審查`
+
 1. **編輯 `config.yml`** — 填入研究基本資料（IRB 編號、計畫名稱、主持人、日期、研究類型）
 2. **`make all`** — 產生 DOCX、轉換 PDF、顯示儀表板
-3. **檢查預覽** — 確認 `output/preview/*.png` 排版正確
-4. **完成手動步驟** — 簽名、附上計畫書、email 至 irb@kfsyscc.org
+3. **檢查預覽** — 確認 `output/<phase>/preview/*.png` 排版正確
+4. **完成手動步驟** — 簽名、附上計畫書、依設定信箱寄送
 
 ### 設定檔結構
 
@@ -124,13 +148,23 @@ study:
 pi:
   name: "林協霆"                 # 計畫主持人
   dept: "腫瘤內科部／醫師"        # 單位／職稱
-  email: "htlin222@kfsyscc.org"
+  email: "tmwang@kmuh.org.tw"
 
 subjects:
   planned_n: 300                # 預計收錄人數
   consent_waiver: true          # 回溯性研究自動設為 true
 
 phase: new                     # new|amendment|continuing|closure|sae|...
+
+institution: kmuh             # kfsyscc（預設）或 kmuh
+
+harness:
+  group_by_phase: true
+  phases:
+    - new
+    - amendment
+    - continuing
+    - closure
 
 automation:
   hook_timeout: 120

@@ -155,3 +155,49 @@ def add_footer(doc, ver, fno, date):
     p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     run = p.add_run(f"版次第{ver}版　{fno}　{date}")
     set_run_font(run, size=9)
+
+
+def _replace_text_in_paragraph(paragraph, replacements):
+    """Replace known text snippets in a paragraph.
+
+    Paragraph-level replacement is pragmatic: it may flatten complex run styling for
+    replaced content, but it keeps the existing generator output shape stable.
+    """
+    if not replacements:
+        return
+    original = paragraph.text
+    updated = original
+    for old_text, new_text in replacements.items():
+        updated = updated.replace(old_text, new_text)
+    if updated == original:
+        return
+
+    if not paragraph.runs:
+        paragraph.add_run(updated)
+        return
+
+    first = paragraph.runs[0]
+    first.text = updated
+    for run in paragraph.runs[1:]:
+        run.text = ""
+
+
+def apply_institution_text_replacements(docx_path, institution_profile):
+    """Apply institution text replacements to generated DOCX in-place."""
+    from docx import Document
+
+    replacements = institution_profile.get("text_replacements", {})
+    if not replacements:
+        return
+
+    doc = Document(docx_path)
+    for paragraph in doc.paragraphs:
+        _replace_text_in_paragraph(paragraph, replacements)
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    _replace_text_in_paragraph(paragraph, replacements)
+
+    doc.save(docx_path)

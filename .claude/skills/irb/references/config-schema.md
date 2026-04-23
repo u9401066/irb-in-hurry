@@ -22,6 +22,21 @@ All study data lives in `config.yml`. Generators read from this file; nothing is
 | `genetic` | bool | Involves genetic data | `false` |
 | `multicenter` | bool | Multi-center study | `false` |
 
+## `institution` (optional)
+
+| Field | Type | Description | Example |
+|---|---|---|---|
+| `institution` | string | Institution profile key: `kfsyscc` or `kmuh` | `kmuh` |
+
+## `harness` (optional)
+
+The harness settings control multi-phase submission pipelines.
+
+| Field | Type | Description | Example |
+|---|---|---|---|
+| `group_by_phase` | bool | Store each phase in `output/<phase>/` when multiple phases run. | `true` |
+| `phases` | list[string] | Ordered list of phases to process in one run. | `["new", "amendment", "continuing", "closure"]` |
+
 ## `pi` (required)
 
 | Field | Type | Description | Example |

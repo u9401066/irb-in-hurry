@@ -25,6 +25,12 @@ from scripts.workflow_hooks import (
 )
 
 
+def collect_docx_files(output_dir):
+    """Collect DOCX files recursively for phase-based harness output."""
+    pattern = os.path.join(output_dir, "**", "*.docx")
+    return sorted(glob.glob(pattern, recursive=True))
+
+
 def docx_to_pdf(docx_path, output_dir, config=None):
     """Convert DOCX to PDF using LibreOffice headless."""
     backend = conversion_backend(config)
@@ -131,12 +137,12 @@ def main(output_dir="output", config_path="config.yml"):
         preview_dir=preview_dir,
     )
 
-    docx_files = sorted(glob.glob(os.path.join(output_dir, "*.docx")))
+    docx_files = collect_docx_files(output_dir)
     if not docx_files:
-        print("No .docx files found in output/")
+        print(f"No .docx files found under {output_dir}/")
         return
 
-    print(f"Converting {len(docx_files)} DOCX files...")
+    print(f"Converting {len(docx_files)} DOCX files under {output_dir}/ ...")
     print()
 
     pdf_count = 0
@@ -144,6 +150,8 @@ def main(output_dir="output", config_path="config.yml"):
 
     for docx_path in docx_files:
         basename = os.path.basename(docx_path)
+        doc_output_dir = os.path.dirname(docx_path)
+        phase_preview_dir = os.path.join(doc_output_dir, "preview")
 
         # DOCX → PDF
         run_hooks(
@@ -151,10 +159,10 @@ def main(output_dir="output", config_path="config.yml"):
             "before_docx_to_pdf",
             config_path=config_path,
             input_path=docx_path,
-            output_dir=output_dir,
-            preview_dir=preview_dir,
+            output_dir=doc_output_dir,
+            preview_dir=phase_preview_dir,
         )
-        pdf_path = docx_to_pdf(docx_path, output_dir, config=config)
+        pdf_path = docx_to_pdf(docx_path, doc_output_dir, config=config)
         if pdf_path:
             print(f"  ■ PDF: {basename}")
             pdf_count += 1
@@ -163,8 +171,8 @@ def main(output_dir="output", config_path="config.yml"):
                 "after_docx_to_pdf",
                 config_path=config_path,
                 input_path=docx_path,
-                output_dir=output_dir,
-                preview_dir=preview_dir,
+                output_dir=doc_output_dir,
+                preview_dir=phase_preview_dir,
                 output_path=pdf_path,
                 pdf_path=pdf_path,
             )
@@ -175,11 +183,11 @@ def main(output_dir="output", config_path="config.yml"):
                 "before_pdf_to_png",
                 config_path=config_path,
                 input_path=docx_path,
-                output_dir=output_dir,
-                preview_dir=preview_dir,
+                output_dir=doc_output_dir,
+                preview_dir=phase_preview_dir,
                 pdf_path=pdf_path,
             )
-            png_path = pdf_to_png(pdf_path, preview_dir)
+            png_path = pdf_to_png(pdf_path, phase_preview_dir)
             if png_path:
                 print(f"  ■ PNG: {os.path.basename(png_path)}")
                 png_count += 1
@@ -188,8 +196,8 @@ def main(output_dir="output", config_path="config.yml"):
                     "after_pdf_to_png",
                     config_path=config_path,
                     input_path=docx_path,
-                    output_dir=output_dir,
-                    preview_dir=preview_dir,
+                    output_dir=doc_output_dir,
+                    preview_dir=phase_preview_dir,
                     pdf_path=pdf_path,
                     png_path=png_path,
                     output_path=png_path,

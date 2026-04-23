@@ -17,6 +17,7 @@ from scripts.form_selector import select_forms, FORM_REGISTRY
 from scripts.review_criteria import (
     REVIEW_CRITERIA, PLACEHOLDER_PATTERNS, DECISIONS, SEVERITY,
 )
+from scripts.institution_profiles import get_institution_profile, get_phase_name
 
 
 def extract_text(docx_path):
@@ -284,7 +285,7 @@ def check_study_design(config, form_texts):
     return results, findings
 
 
-def check_administrative(config, form_texts):
+def check_administrative(config, form_texts, institution_profile):
     """Check administrative compliance criteria."""
     results = []
     findings = []
@@ -306,7 +307,7 @@ def check_administrative(config, form_texts):
 
     results.append(("all_signatures", True, "Signature blocks present (manual step required)"))
     results.append(("current_versions", True, "Using current form versions"))
-    results.append(("submission_noted", True, "Submit to irb@kfsyscc.org"))
+    results.append(("submission_noted", True, f"Submit to {institution_profile['submission_email']}"))
 
     return results, findings
 
@@ -397,16 +398,11 @@ def run_review(config_path="config.yml", output_dir="output"):
     config = load_config(config_path)
     irb_no = config["study"]["irb_no"]
     phase = config["phase"]
-    phase_names = {
-        "new": "新案審查", "amendment": "修正案審查", "re_review": "複審案審查",
-        "continuing": "期中審查", "closure": "結案審查", "sae": "嚴重不良反應事件審查",
-        "ib_update": "主持人手冊更新", "import": "專案進口審查",
-        "suspension": "計畫暫停/提前終止", "appeal": "申覆案審查",
-    }
-    phase_zh = phase_names.get(phase, phase)
+    institution_profile = get_institution_profile(config)
+    phase_zh = get_phase_name(phase, institution_profile)
 
-    # Load all generated DOCX files
-    docx_files = sorted(glob.glob(os.path.join(output_dir, "*.docx")))
+    # Load all generated DOCX files (recursive for harness mode)
+    docx_files = sorted(glob.glob(os.path.join(output_dir, "**", "*.docx"), recursive=True))
     if not docx_files:
         print("✗ No DOCX files found in output/. Run `make generate` first.")
         sys.exit(1)
@@ -431,7 +427,7 @@ def run_review(config_path="config.yml", output_dir="output"):
         ("privacy", check_privacy, (config, form_texts)),
         ("subject_selection", check_subject_selection, (config, form_texts)),
         ("study_design", check_study_design, (config, form_texts)),
-        ("administrative", check_administrative, (config, form_texts)),
+        ("administrative", check_administrative, (config, form_texts, institution_profile)),
     ]
 
     for category, checker, args in checkers:
@@ -556,8 +552,8 @@ def run_review(config_path="config.yml", output_dir="output"):
         "---",
         "",
         f"*本審查意見由 IRB-in-Hurry Reviewer 自動產生，僅供參考。*",
-        f"*正式審查結果以和信治癌中心醫院人體試驗委員會之決議為準。*",
-        f"*送審請寄：irb@kfsyscc.org*",
+        f"*{institution_profile['decision_note']}*",
+        f"*送審請寄：{institution_profile['submission_email']}*",
         f"*審查指引：see .claude/skills/irb/references/reviewer-guide.md*",
     ])
 

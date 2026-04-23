@@ -76,6 +76,16 @@ make setup
 #    (or copy the example fixture)
 cp tests/fixtures/sample_retrospective.yml config.yml
 
+# 2.5 KMUH alignment (recommended, phase-first order)
+#     institution: kmuh
+#     harness:
+#       group_by_phase: true
+#       phases:
+#         - new
+#         - amendment
+#         - continuing
+#         - closure
+
 # 3. Generate everything
 make all
 ```
@@ -97,19 +107,33 @@ make all
 | `make closure` | Switch to closure phase + generate |
 | `make amendment` | Switch to amendment phase + generate |
 | `make continuing` | Switch to continuing review + generate |
+| `make kmuh-seq` | Set KMUH full sequence (new→amendment→continuing→closure) + generate |
+
+If `make` is not available, use:
+
+```bash
+./bin/irb new
+./bin/irb kmuh-seq
+./bin/irb report-kmuh
+```
 
 ### Workflow
 
 ```
-config.yml → generate_all.py → output/*.docx → convert.py → output/*.pdf
-                                                           → output/preview/*.png
+config.yml → generate_all.py → output/<phase>/*.docx → convert.py → output/<phase>/*.pdf
+                                                           → output/<phase>/preview/*.png
                                   checklist.md ← checklist.py
 ```
 
+In harness mode, each phase is generated under `output/<phase>/`.
+
+KMUH process order in this repository:
+- new → amendment → continuing → closure
+
 1. **Edit `config.yml`** — Fill in study metadata (IRB number, titles, PI info, dates, study type)
 2. **`make all`** — Generates DOCX forms, converts to PDF, shows dashboard
-3. **Review previews** — Check `output/preview/*.png` for visual validation
-4. **Complete manual steps** — Sign forms, attach protocol, email to irb@kfsyscc.org
+3. **Review previews** — Check `output/<phase>/preview/*.png` for visual validation
+4. **Complete manual steps** — Sign forms, attach protocol, and email to the institution mailbox from config
 
 ### Config Schema
 
@@ -124,11 +148,21 @@ study:
 pi:
   name: "林協霆"
   dept: "腫瘤內科部／醫師"
-  email: "htlin222@kfsyscc.org"
+  email: "tmwang@kmuh.org.tw"
 
 subjects:
   planned_n: 300
   consent_waiver: true       # auto-set for retrospective
+
+institution: kmuh
+
+harness:
+  group_by_phase: true
+  phases:
+    - new
+    - amendment
+    - continuing
+    - closure
 
 phase: new                   # new|amendment|continuing|closure|sae|...
 
