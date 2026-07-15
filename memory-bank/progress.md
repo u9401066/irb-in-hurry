@@ -21,6 +21,8 @@ Last updated: 2026-07-15
   GitHub Pages for the repository.
 - [x] Add a human-confirmed local asset import path with signature checks,
   immutable evidence manifests, and explicit source-revision handling.
+- [x] Add Python 3.10/3.12 CI for locked install, lint, format, type checks,
+  regression tests, and package build.
 
 ## Doing
 

@@ -6,7 +6,8 @@
 > KFSYSCC compatibility layer and are not official KMUH forms.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-60%20passed-brightgreen.svg)](#validation)
+[![CI](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml/badge.svg)](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-61%20passed-brightgreen.svg)](#validation)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -145,7 +146,7 @@ uv build
 git diff --check
 ```
 
-The 60 regression tests cover contract and evidence validation, immutable online
+The 61 regression tests cover contract and evidence validation, immutable online
 and offline source acquisition, requirement mapping, portal-control binding,
 browser safety policy,
 the GitHub Pages site, and the retained KFSYSCC generation path.

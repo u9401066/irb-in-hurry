@@ -4,7 +4,8 @@
 > 預設契約為 KMUH；舊有 `scripts/generators` 仍屬 KFSYSCC 相容層，尚不可視為 KMUH 正式表單。
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-60%20passed-brightgreen.svg)](#測試)
+[![CI](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml/badge.svg)](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-61%20passed-brightgreen.svg)](#測試)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#表單涵蓋範圍)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
@@ -330,7 +331,7 @@ automation:
 make test
 ```
 
-60 項測試涵蓋契約驗證、線上／離線來源雜湊與 locator、人工審核 requirement／portal 欄位綁定、
+61 項測試涵蓋契約驗證、線上／離線來源雜湊與 locator、人工審核 requirement／portal 欄位綁定、
 安全下載／ZIP 解包、去識別化頁面 mapping、Browser MCP 安全政策，以及舊 KFSYSCC
 表單選取、GitHub Pages 說明站與端對端產生測試。
 
