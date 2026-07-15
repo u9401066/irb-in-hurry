@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import mimetypes
 import os
 import re
 import shutil
@@ -60,6 +61,10 @@ class RetrievedAsset:
     path: Path
     reused: bool
     members: tuple[RetrievedMember, ...] = ()
+    acquisition_mode: str = "https_download"
+    source_name_sha256: str | None = None
+    source_suffix: str | None = None
+    human_source_identity_confirmed: bool = False
 
 
 def retrieve_asset(
@@ -158,6 +163,127 @@ def retrieve_asset(
     except Exception as exc:
         raise SourceRetrievalError(
             f"failed to retrieve contract asset '{asset_id}': {type(exc).__name__}"
+        ) from exc
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
+def import_local_asset(
+    *,
+    organization_id: str,
+    asset_id: str,
+    declared_url: str,
+    source_path: str | Path,
+    cache_root: str | Path,
+    expected_media_type: str | None = None,
+    human_source_identity_confirmed: bool = False,
+    max_bytes: int = DEFAULT_MAX_DOWNLOAD_BYTES,
+) -> RetrievedAsset:
+    """Copy a human-confirmed local rendition into the immutable asset cache."""
+    requested = _validated_https_url(declared_url)
+    provided_source = Path(source_path).expanduser()
+    if not human_source_identity_confirmed:
+        raise SourceRetrievalError(
+            "local import requires explicit human source-identity confirmation"
+        )
+    if provided_source.is_symlink() or not provided_source.is_file():
+        raise SourceRetrievalError("local import source must be a regular file")
+    source = provided_source.resolve()
+    initial_stat = source.stat()
+    if initial_stat.st_size > max_bytes:
+        raise SourceRetrievalError(
+            f"local asset exceeds the {max_bytes}-byte import limit"
+        )
+    media_type = _local_media_type(source)
+    if not _compatible_media_type(media_type, expected_media_type):
+        raise SourceRetrievalError(
+            "local asset media type does not match the declared contract asset: "
+            f"detected {media_type}, expected {expected_media_type}"
+        )
+
+    cache = Path(cache_root).expanduser().resolve()
+    partials = cache / ".partial"
+    partials.mkdir(parents=True, exist_ok=True)
+    temporary_path: Path | None = None
+    try:
+        descriptor, temporary_name = tempfile.mkstemp(prefix="import-", dir=partials)
+        temporary_path = Path(temporary_name)
+        digest = hashlib.sha256()
+        byte_size = 0
+        with (
+            source.open("rb") as input_handle,
+            os.fdopen(descriptor, "wb") as output_handle,
+        ):
+            while True:
+                chunk = input_handle.read(1024 * 1024)
+                if not chunk:
+                    break
+                byte_size += len(chunk)
+                if byte_size > max_bytes:
+                    raise SourceRetrievalError(
+                        f"local asset exceeds the {max_bytes}-byte import limit"
+                    )
+                digest.update(chunk)
+                output_handle.write(chunk)
+            output_handle.flush()
+            os.fsync(output_handle.fileno())
+        final_stat = source.stat()
+        stable_identity = (
+            initial_stat.st_dev,
+            initial_stat.st_ino,
+            initial_stat.st_size,
+            initial_stat.st_mtime_ns,
+        )
+        final_identity = (
+            final_stat.st_dev,
+            final_stat.st_ino,
+            final_stat.st_size,
+            final_stat.st_mtime_ns,
+        )
+        if stable_identity != final_identity or byte_size != initial_stat.st_size:
+            raise SourceRetrievalError("local import source changed while being copied")
+
+        sha256 = digest.hexdigest()
+        suffix = _payload_suffix(source.as_uri(), media_type)
+        asset_directory = (
+            cache
+            / _safe_component(organization_id)
+            / "assets"
+            / _safe_component(asset_id)
+            / sha256
+        )
+        asset_directory.mkdir(parents=True, exist_ok=True)
+        payload = asset_directory / f"payload{suffix}"
+        reused = payload.exists()
+        if reused:
+            if _file_sha256(payload) != sha256:
+                raise SourceRetrievalError(
+                    f"immutable cache entry failed hash verification: {payload}"
+                )
+        else:
+            os.replace(temporary_path, payload)
+            temporary_path = None
+            payload.chmod(0o600)
+        return RetrievedAsset(
+            asset_id=asset_id,
+            requested_url=requested,
+            final_url=requested,
+            media_type=media_type,
+            sha256=sha256,
+            byte_size=byte_size,
+            path=payload,
+            reused=reused,
+            acquisition_mode="human_provided_local_copy",
+            source_name_sha256=hashlib.sha256(source.name.encode("utf-8")).hexdigest(),
+            source_suffix=source.suffix.lower() or None,
+            human_source_identity_confirmed=True,
+        )
+    except SourceRetrievalError:
+        raise
+    except Exception as exc:
+        raise SourceRetrievalError(
+            f"failed to import local contract asset '{asset_id}': {type(exc).__name__}"
         ) from exc
     finally:
         if temporary_path is not None:
@@ -275,6 +401,10 @@ def _with_members(
         path=asset.path,
         reused=asset.reused,
         members=members,
+        acquisition_mode=asset.acquisition_mode,
+        source_name_sha256=asset.source_name_sha256,
+        source_suffix=asset.source_suffix,
+        human_source_identity_confirmed=asset.human_source_identity_confirmed,
     )
 
 
@@ -313,6 +443,44 @@ def _response_content_length(response: Any) -> int | None:
     except (TypeError, ValueError):
         return None
     return value if value >= 0 else None
+
+
+def _local_media_type(source: Path) -> str:
+    with source.open("rb") as handle:
+        prefix = handle.read(4096)
+    if prefix.startswith(b"%PDF-"):
+        return "application/pdf"
+    if zipfile.is_zipfile(source):
+        with zipfile.ZipFile(source) as archive:
+            names = set(archive.namelist())
+        if {"[Content_Types].xml", "word/document.xml"} <= names:
+            return (
+                "application/vnd.openxmlformats-officedocument."
+                "wordprocessingml.document"
+            )
+        return "application/zip"
+    normalized = prefix.lstrip().lower()
+    if normalized.startswith(b"<!doctype html") or normalized.startswith(b"<html"):
+        return "text/html"
+    if source.suffix.lower() in {".md", ".markdown"}:
+        return "text/markdown"
+    if source.suffix.lower() in {".yml", ".yaml"}:
+        return "application/yaml"
+    if source.suffix.lower() in {".docx", ".pdf", ".zip"}:
+        return "application/octet-stream"
+    return mimetypes.guess_type(source.name)[0] or "application/octet-stream"
+
+
+def _compatible_media_type(actual: str, expected: str | None) -> bool:
+    if not expected or expected == "application/octet-stream":
+        return True
+    aliases = {
+        "application/x-zip-compressed": "application/zip",
+        "text/x-markdown": "text/markdown",
+    }
+    return aliases.get(actual, actual) == aliases.get(
+        expected.lower(), expected.lower()
+    )
 
 
 def _payload_suffix(url: str, media_type: str) -> str:

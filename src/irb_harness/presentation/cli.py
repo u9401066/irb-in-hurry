@@ -17,7 +17,10 @@ from irb_harness.application.page_mapping import (
     write_page_mapping,
 )
 from irb_harness.application.requirement_mapping import map_requirement_from_evidence
-from irb_harness.application.source_sync import sync_contract_sources
+from irb_harness.application.source_sync import (
+    import_contract_asset,
+    sync_contract_sources,
+)
 from irb_harness.application.website_binding import bind_requirement_to_control
 from irb_harness.infrastructure.browser_session import BrowserController
 from irb_harness.infrastructure.contract_loader import (
@@ -70,6 +73,25 @@ def build_parser() -> argparse.ArgumentParser:
     sync_sources.add_argument("--output")
     sync_sources.add_argument("--continue-on-error", action="store_true")
     sync_sources.add_argument("--update-output", action="store_true")
+    sync_sources.add_argument("--allow-revision", action="store_true")
+
+    import_local = subcommands.add_parser(
+        "import-local",
+        help="import one human-confirmed declared asset from a local file",
+    )
+    import_local.add_argument("--contract")
+    import_local.add_argument("--organization", default="kmuh")
+    selected_asset = import_local.add_mutually_exclusive_group(required=True)
+    selected_asset.add_argument("--source")
+    selected_asset.add_argument("--form-set")
+    import_local.add_argument("--file", required=True)
+    import_local.add_argument("--cache", default=".irb-source-cache")
+    import_local.add_argument("--output")
+    import_local.add_argument(
+        "--human-confirmed-source", action="store_true", required=True
+    )
+    import_local.add_argument("--allow-revision", action="store_true")
+    import_local.add_argument("--update-output", action="store_true")
 
     map_evidence = subcommands.add_parser(
         "map-evidence",
@@ -210,6 +232,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             form_set_ids=args.form_set,
             continue_on_error=args.continue_on_error,
             update_output=args.update_output,
+            allow_revision=args.allow_revision,
         )
         print(
             json.dumps(
@@ -218,6 +241,34 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "manifest": str(sync_result.manifest_path),
                     "retrieved_ids": sync_result.retrieved_ids,
                     "failed_ids": sync_result.failed_ids,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0
+    if args.command == "import-local":
+        mapping = load_contract_mapping(
+            args.contract, organization_id=args.organization
+        )
+        output = args.output or f"organizations/{args.organization}/contract.yml"
+        import_result = import_contract_asset(
+            mapping,
+            local_file=args.file,
+            output_path=output,
+            cache_root=args.cache,
+            source_id=args.source,
+            form_set_id=args.form_set,
+            human_source_identity_confirmed=args.human_confirmed_source,
+            update_output=args.update_output,
+            allow_revision=args.allow_revision,
+        )
+        print(
+            json.dumps(
+                {
+                    "contract": str(import_result.contract_path),
+                    "manifest": str(import_result.manifest_path),
+                    "imported_ids": import_result.retrieved_ids,
                 },
                 ensure_ascii=False,
                 indent=2,

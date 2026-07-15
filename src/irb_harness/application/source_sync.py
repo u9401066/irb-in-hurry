@@ -20,6 +20,7 @@ from irb_harness.infrastructure.document_ingest import ingest_document
 from irb_harness.infrastructure.source_archive import (
     RetrievedAsset,
     expand_zip_asset,
+    import_local_asset,
     retrieve_asset,
 )
 
@@ -57,6 +58,7 @@ def sync_contract_sources(
     form_set_ids: Iterable[str] = (),
     continue_on_error: bool = False,
     update_output: bool = False,
+    allow_revision: bool = False,
     retriever: Retriever = retrieve_asset,
 ) -> SourceSyncResult:
     """Retrieve selected declared assets, preserve evidence, and write an override."""
@@ -80,9 +82,26 @@ def sync_contract_sources(
                 cache_root=cache,
                 expected_media_type=request.expected_media_type,
             )
+            previous_sha256 = _find_entry(original, request).get("sha256")
+            if (
+                isinstance(previous_sha256, str)
+                and previous_sha256
+                and previous_sha256 != asset.sha256
+                and not allow_revision
+            ):
+                raise SourceSyncError(
+                    f"asset '{request.asset_id}' differs from the contract SHA-256; "
+                    "allow_revision is required for an explicit source revision"
+                )
             if _is_zip(request.url, asset):
                 asset = expand_zip_asset(asset, cache_root=cache)
             evidence = _asset_evidence(contract.organization_id, request, asset, cache)
+            if (
+                isinstance(previous_sha256, str)
+                and previous_sha256
+                and previous_sha256 != asset.sha256
+            ):
+                evidence["supersedes_contract_sha256"] = previous_sha256
             successful[request.asset_id] = (request, asset, evidence)
         except Exception as exc:
             errors.append(
@@ -109,7 +128,7 @@ def sync_contract_sources(
         manifest, cache, contract.organization_id
     )
     if errors and not continue_on_error:
-        failed = ", ".join(item["asset_id"] for item in errors)
+        failed = "; ".join(f"{item['asset_id']}: {item['message']}" for item in errors)
         raise SourceSyncError(
             f"source synchronization failed for {failed}; evidence manifest: {manifest_path}"
         )
@@ -117,15 +136,29 @@ def sync_contract_sources(
     updated = deepcopy(original)
     for request, asset, _ in successful.values():
         entry = _find_entry(updated, request)
+        previous_sha256 = entry.get("sha256")
         entry["sha256"] = asset.sha256
         entry["evidence_status"] = "retrieved_needs_rule_mapping"
         entry["retrieval"] = {
+            "acquisition_mode": asset.acquisition_mode,
             "media_type": asset.media_type,
             "byte_size": asset.byte_size,
             "cache_path": str(asset.path.relative_to(cache)),
             "final_uri": _redact_url(asset.final_url),
             "member_count": len(asset.members),
         }
+        if asset.human_source_identity_confirmed:
+            entry["retrieval"]["source_identity_confirmation"] = "human_confirmed"
+        if asset.source_name_sha256:
+            entry["retrieval"]["source_name_sha256"] = asset.source_name_sha256
+        if asset.source_suffix:
+            entry["retrieval"]["source_suffix"] = asset.source_suffix
+        if (
+            isinstance(previous_sha256, str)
+            and previous_sha256
+            and previous_sha256 != asset.sha256
+        ):
+            entry["retrieval"]["supersedes_sha256"] = previous_sha256
         if request.collection == "source_documents":
             _advance_reference_status(updated, request.asset_id)
     updated["source_sync"] = {
@@ -147,6 +180,50 @@ def sync_contract_sources(
         manifest_path=manifest_path,
         retrieved_ids=tuple(successful),
         failed_ids=tuple(item["asset_id"] for item in errors),
+    )
+
+
+def import_contract_asset(
+    contract_mapping: Mapping[str, Any],
+    *,
+    local_file: str | Path,
+    output_path: str | Path,
+    cache_root: str | Path = ".irb-source-cache",
+    source_id: str | None = None,
+    form_set_id: str | None = None,
+    human_source_identity_confirmed: bool = False,
+    update_output: bool = False,
+    allow_revision: bool = False,
+) -> SourceSyncResult:
+    """Import one human-confirmed declared asset through the normal sync pipeline."""
+    if bool(source_id) == bool(form_set_id):
+        raise SourceSyncError("select exactly one source_id or form_set_id")
+    if not human_source_identity_confirmed:
+        raise SourceSyncError(
+            "local import requires explicit human source-identity confirmation"
+        )
+    source = Path(local_file).expanduser().resolve()
+
+    def local_retriever(**kwargs: Any) -> RetrievedAsset:
+        return import_local_asset(
+            organization_id=str(kwargs["organization_id"]),
+            asset_id=str(kwargs["asset_id"]),
+            declared_url=str(kwargs["url"]),
+            source_path=source,
+            cache_root=kwargs["cache_root"],
+            expected_media_type=kwargs.get("expected_media_type"),
+            human_source_identity_confirmed=True,
+        )
+
+    return sync_contract_sources(
+        contract_mapping,
+        output_path=output_path,
+        cache_root=cache_root,
+        source_ids=[source_id] if source_id else [],
+        form_set_ids=[form_set_id] if form_set_id else [],
+        update_output=update_output,
+        allow_revision=allow_revision,
+        retriever=local_retriever,
     )
 
 
@@ -247,6 +324,14 @@ def _asset_evidence(
         "byte_size": asset.byte_size,
         "cache_path": str(asset.path.relative_to(cache)),
         "cache_reused": asset.reused,
+        "acquisition_mode": asset.acquisition_mode,
+        "source_identity_confirmation": (
+            "human_confirmed"
+            if asset.human_source_identity_confirmed
+            else "not_applicable"
+        ),
+        "source_name_sha256": asset.source_name_sha256,
+        "source_suffix": asset.source_suffix,
         "documents": documents,
     }
 

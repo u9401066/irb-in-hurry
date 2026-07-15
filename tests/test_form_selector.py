@@ -1,4 +1,5 @@
 """Tests for form_selector.py."""
+
 import pytest
 import yaml
 import os
@@ -44,8 +45,13 @@ def test_retrospective_closure_selects_correct_forms(retro_config):
 
 def test_drug_trial_adds_consent_forms():
     config = {
-        "study": {"type": "clinical_trial", "review_type": "full_board",
-                  "drug_device": True, "genetic": False, "multicenter": False},
+        "study": {
+            "type": "clinical_trial",
+            "review_type": "full_board",
+            "drug_device": True,
+            "genetic": False,
+            "multicenter": False,
+        },
         "subjects": {"consent_waiver": False, "vulnerable_population": False},
         "phase": "new",
     }
@@ -70,7 +76,11 @@ def test_amendment_forms():
 
 
 def test_unknown_phase_raises():
-    config = {"study": {"type": "retrospective"}, "subjects": {"consent_waiver": True}, "phase": "unknown"}
+    config = {
+        "study": {"type": "retrospective"},
+        "subjects": {"consent_waiver": True},
+        "phase": "unknown",
+    }
     with pytest.raises(ValueError, match="Unknown phase"):
         select_forms(config)
 
@@ -90,7 +100,14 @@ def test_unknown_institution_raises(retro_config):
 
 
 def test_all_phases_return_forms(retro_config):
-    for phase in ["new", "amendment", "continuing", "closure", "suspension", "appeal"]:
+    for phase in [
+        "new",
+        "amendment",
+        "continuing",
+        "closure",
+        "suspension",
+        "appeal",
+    ]:
         retro_config["phase"] = phase
         forms = select_forms(retro_config)
         assert len(forms) > 0, f"Phase {phase} returned no forms"
@@ -111,6 +128,7 @@ def test_get_generator_unknown_returns_none():
 def test_form_registry_completeness():
     """All forms in phase rules should be in registry."""
     from scripts.form_selector import PHASE_FORMS
+
     for phase, rules in PHASE_FORMS.items():
         for fid in rules["base"]:
             assert fid in FORM_REGISTRY, f"{fid} in {phase} base not in registry"
