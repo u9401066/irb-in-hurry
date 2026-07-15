@@ -49,3 +49,15 @@ def test_pages_workflow_uses_official_artifact_deployment_actions():
     assert "path: site" in workflow
     assert "pages: write" in workflow
     assert "id-token: write" in workflow
+
+
+def test_ci_workflow_checks_supported_python_and_locked_dependencies():
+    workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    assert '"3.10"' in workflow
+    assert '"3.12"' in workflow
+    assert "uv sync --locked --group dev" in workflow
+    assert "ruff check src/irb_harness scripts/report_kmuh.py tests/" in workflow
+    assert "mypy src --ignore-missing-imports" in workflow
+    assert "pytest tests/ -q" in workflow
+    assert "uv build" in workflow
