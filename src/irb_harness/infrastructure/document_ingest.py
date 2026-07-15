@@ -18,6 +18,8 @@ class EvidenceSpan:
     line_end: int
     char_start: int
     char_end: int
+    byte_start: int
+    byte_end: int
     text_sha256: str
     context: str
 
@@ -29,6 +31,8 @@ class EvidenceSpan:
             "line_end": self.line_end,
             "char_start": self.char_start,
             "char_end": self.char_end,
+            "byte_start": self.byte_start,
+            "byte_end": self.byte_end,
             "text_sha256": self.text_sha256,
             "context": self.context,
         }
@@ -44,23 +48,42 @@ class IngestedDocument:
     text: str
     spans: tuple[EvidenceSpan, ...]
 
+    @property
+    def source_uri(self) -> str:
+        """Return a portable content identity without leaking a workstation path."""
+        return f"urn:sha256:{self.byte_sha256}"
+
+    @property
+    def source_name_sha256(self) -> str:
+        return hashlib.sha256(self.path.name.encode("utf-8")).hexdigest()
+
     def contract_source(self) -> dict[str, Any]:
         return {
             "source_id": self.source_id,
             "title": self.path.name,
-            "uri": self.path.resolve().as_uri(),
+            "uri": self.source_uri,
             "media_type": self.media_type,
             "sha256": self.byte_sha256,
             "evidence_status": "ingested_needs_rule_mapping",
+            "ingest": {
+                "acquisition_mode": "local_compile_input",
+                "source_name_sha256": self.source_name_sha256,
+                "source_suffix": self.path.suffix.lower() or None,
+                "absolute_path_included": False,
+            },
         }
 
     def evidence_record(self) -> dict[str, Any]:
         return {
             "source_id": self.source_id,
-            "uri": self.path.resolve().as_uri(),
+            "uri": self.source_uri,
             "byte_sha256": self.byte_sha256,
             "byte_size": self.byte_size,
             "media_type": self.media_type,
+            "acquisition_mode": "local_compile_input",
+            "source_name_sha256": self.source_name_sha256,
+            "source_suffix": self.path.suffix.lower() or None,
+            "absolute_path_included": False,
             "text_sha256": hashlib.sha256(self.text.encode("utf-8")).hexdigest(),
             "spans": [span.as_dict() for span in self.spans],
         }
@@ -76,7 +99,7 @@ def ingest_document(path: str | Path, *, institution_id: str) -> IngestedDocumen
     media_type = _media_type(source)
     text = _extract_text(source, media_type)
     normalized = _normalize_text(text)
-    source_id = f"{institution_id}:{_slug(source.stem)}:{byte_sha256[:12]}"
+    source_id = f"{institution_id}:document:{byte_sha256}"
     spans = tuple(_make_spans(source_id, normalized))
     return IngestedDocument(
         source_id=source_id,
@@ -166,12 +189,16 @@ class _VisibleTextParser(HTMLParser):
 
 
 def _make_spans(source_id: str, text: str) -> Iterable[EvidenceSpan]:
-    offset = 0
+    char_offset = 0
+    byte_offset = 0
     for line_number, line in enumerate(text.splitlines(keepends=True), start=1):
         content = line.rstrip("\r\n")
-        start = offset
-        end = start + len(content)
-        offset += len(line)
+        char_start = char_offset
+        char_end = char_start + len(content)
+        byte_start = byte_offset
+        byte_end = byte_start + len(content.encode("utf-8"))
+        char_offset += len(line)
+        byte_offset += len(line.encode("utf-8"))
         if not content.strip():
             continue
         digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -179,8 +206,10 @@ def _make_spans(source_id: str, text: str) -> Iterable[EvidenceSpan]:
             span_id=f"{source_id}:L{line_number}",
             line_start=line_number,
             line_end=line_number,
-            char_start=start,
-            char_end=end,
+            char_start=char_start,
+            char_end=char_end,
+            byte_start=byte_start,
+            byte_end=byte_end,
             text_sha256=digest,
             context=content[:240],
         )

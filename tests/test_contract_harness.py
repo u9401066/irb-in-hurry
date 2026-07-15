@@ -185,6 +185,19 @@ def test_docx_ingest_preserves_hashes_and_line_locators(tmp_path):
     assert len(ingested.byte_sha256) == 64
     assert any(span.context == "計畫名稱：測試研究" for span in ingested.spans)
     assert all(span.char_end >= span.char_start for span in ingested.spans)
+    assert all(span.byte_end >= span.byte_start for span in ingested.spans)
+    chinese_span = next(
+        span for span in ingested.spans if span.context == "計畫名稱：測試研究"
+    )
+    assert chinese_span.byte_end - chinese_span.byte_start > (
+        chinese_span.char_end - chinese_span.char_start
+    )
+
+    renamed = tmp_path / "renamed.docx"
+    renamed.write_bytes(source.read_bytes())
+    assert (
+        ingest_document(renamed, institution_id="kmuh").source_id == ingested.source_id
+    )
 
 
 def test_compile_contract_creates_separate_evidence_index_without_overwrite(tmp_path):
@@ -204,7 +217,40 @@ def test_compile_contract_creates_separate_evidence_index_without_overwrite(tmp_
     assert contract["organization"]["id"] == "example"
     assert contract["status"] == "draft"
     assert contract["compiler"]["rule_inference"] == "not_performed"
+    assert contract["compiler"]["local_absolute_paths_included"] is False
+    assert contract["source_documents"][0]["uri"].startswith("urn:sha256:")
+    assert contract["source_documents"][0]["ingest"]["absolute_path_included"] is False
     assert evidence["documents"][0]["spans"][0]["line_start"] == 1
+    serialized = contract_path.read_text(encoding="utf-8") + evidence_path.read_text(
+        encoding="utf-8"
+    )
+    assert str(tmp_path) not in serialized
+    assert "file://" not in serialized
 
     with pytest.raises(FileExistsError, match="refusing to overwrite"):
         compile_contract_from_documents("example", "Example IRB", [source], target)
+
+
+def test_compile_contract_is_deterministic_and_deduplicates_identical_bytes(tmp_path):
+    first_source = tmp_path / "first.md"
+    second_source = tmp_path / "second.md"
+    first_source.write_text("送審規則\n人工確認\n", encoding="utf-8")
+    second_source.write_bytes(first_source.read_bytes())
+
+    first_contract, first_evidence = compile_contract_from_documents(
+        "example",
+        "Example IRB",
+        [first_source, second_source],
+        tmp_path / "first.yml",
+    )
+    second_contract, second_evidence = compile_contract_from_documents(
+        "example",
+        "Example IRB",
+        [second_source, first_source],
+        tmp_path / "second.yml",
+    )
+
+    assert first_contract.read_bytes() == second_contract.read_bytes()
+    assert first_evidence.read_bytes() == second_evidence.read_bytes()
+    evidence = json.loads(first_evidence.read_text(encoding="utf-8"))
+    assert len(evidence["documents"]) == 1

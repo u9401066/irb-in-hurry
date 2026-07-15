@@ -107,7 +107,7 @@ def retrieve_asset(
                     raise SourceRetrievalError(
                         "cross-host redirects are not allowed for contract assets"
                     )
-                media_type = _response_media_type(response, expected_media_type)
+                response_media_type = _response_media_type(response)
                 content_length = _response_content_length(response)
                 if content_length is not None and content_length > max_bytes:
                     raise SourceRetrievalError(
@@ -127,6 +127,11 @@ def retrieve_asset(
             output.flush()
             os.fsync(output.fileno())
 
+        media_type = _validated_payload_media_type(
+            temporary_path,
+            response_media_type=response_media_type,
+            expected_media_type=expected_media_type,
+        )
         sha256 = digest.hexdigest()
         suffix = _payload_suffix(final_url, media_type)
         asset_directory = (
@@ -422,7 +427,7 @@ def _validated_https_url(value: str) -> str:
     return value
 
 
-def _response_media_type(response: Any, expected: str | None) -> str:
+def _response_media_type(response: Any) -> str:
     headers = getattr(response, "headers", None)
     if headers is not None and hasattr(headers, "get_content_type"):
         actual = str(headers.get_content_type()).lower()
@@ -430,7 +435,7 @@ def _response_media_type(response: Any, expected: str | None) -> str:
         actual = str(headers.get("Content-Type", "")).split(";", 1)[0].lower()
     else:
         actual = ""
-    return actual or expected or "application/octet-stream"
+    return actual or "application/octet-stream"
 
 
 def _response_content_length(response: Any) -> int | None:
@@ -469,6 +474,61 @@ def _local_media_type(source: Path) -> str:
     if source.suffix.lower() in {".docx", ".pdf", ".zip"}:
         return "application/octet-stream"
     return mimetypes.guess_type(source.name)[0] or "application/octet-stream"
+
+
+def _validated_payload_media_type(
+    source: Path,
+    *,
+    response_media_type: str,
+    expected_media_type: str | None,
+) -> str:
+    """Reject response headers or bytes that contradict a declared asset type."""
+    detected = _local_media_type(source)
+    response_type = response_media_type.lower()
+    expected = expected_media_type.lower() if expected_media_type else None
+    generic_response = response_type in {
+        "",
+        "application/octet-stream",
+        "binary/octet-stream",
+    }
+    signature_types = {
+        "application/pdf",
+        "application/zip",
+        "application/x-zip-compressed",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    }
+
+    if expected:
+        if expected in signature_types and not _compatible_media_type(
+            detected, expected
+        ):
+            raise SourceRetrievalError(
+                "retrieved asset signature does not match the declared media type: "
+                f"detected {detected}, expected {expected}"
+            )
+        if detected != "application/octet-stream" and not _compatible_media_type(
+            detected, expected
+        ):
+            raise SourceRetrievalError(
+                "retrieved asset bytes do not match the declared media type: "
+                f"detected {detected}, expected {expected}"
+            )
+        header_matches = _compatible_media_type(response_type, expected)
+        docx_container_header = (
+            expected
+            == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            and response_type in {"application/zip", "application/x-zip-compressed"}
+        )
+        if not generic_response and not header_matches and not docx_container_header:
+            raise SourceRetrievalError(
+                "retrieved asset Content-Type does not match the declared media type: "
+                f"received {response_type}, expected {expected}"
+            )
+        return detected if detected != "application/octet-stream" else expected
+
+    if detected != "application/octet-stream":
+        return detected
+    return response_type
 
 
 def _compatible_media_type(actual: str, expected: str | None) -> bool:

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import json
 from copy import deepcopy
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
 import yaml
 
-from irb_harness.infrastructure.document_ingest import ingest_document
+from irb_harness.domain.contracts import OrganizationContract
+from irb_harness.infrastructure.document_ingest import IngestedDocument, ingest_document
 
 
 def compile_contract_from_documents(
@@ -30,9 +30,18 @@ def compile_contract_from_documents(
             f"refusing to overwrite existing contract output: {target}"
         )
 
-    documents = [
+    ingested_documents = [
         ingest_document(path, institution_id=institution_id) for path in document_paths
     ]
+    documents_by_id: dict[str, IngestedDocument] = {}
+    for document in ingested_documents:
+        previous = documents_by_id.get(document.source_id)
+        if (
+            previous is None
+            or document.source_name_sha256 < previous.source_name_sha256
+        ):
+            documents_by_id[document.source_id] = document
+    documents = [documents_by_id[source_id] for source_id in sorted(documents_by_id)]
     contract = (
         deepcopy(base_contract)
         if base_contract is not None
@@ -59,13 +68,12 @@ def compile_contract_from_documents(
         if document.source_id not in existing_ids:
             source_documents.append(document.contract_source())
     contract["source_documents"] = source_documents
-    contract["compiled_at"] = (
-        datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-    )
+    contract.pop("compiled_at", None)
     contract["compiler"] = {
         "mode": "deterministic_ingest",
         "rule_inference": "not_performed",
         "review_required": True,
+        "local_absolute_paths_included": False,
     }
 
     evidence = {
@@ -73,6 +81,8 @@ def compile_contract_from_documents(
         "contract_id": contract["contract_id"],
         "documents": [document.evidence_record() for document in documents],
     }
+
+    OrganizationContract.from_mapping(contract)
 
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(

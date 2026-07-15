@@ -94,6 +94,52 @@ def test_retrieve_asset_rejects_cross_host_redirect(tmp_path):
         )
 
 
+def test_retrieve_asset_rejects_html_response_disguised_as_pdf(tmp_path):
+    payload = b"<html><body>Access denied</body></html>"
+
+    def opener(_request, *, timeout):
+        del timeout
+        return _Response(
+            payload,
+            url="https://example.org/official.pdf",
+            media_type="application/pdf",
+        )
+
+    with pytest.raises(SourceRetrievalError, match="signature does not match"):
+        retrieve_asset(
+            organization_id="example",
+            asset_id="official_pdf",
+            url="https://example.org/official.pdf",
+            cache_root=tmp_path,
+            expected_media_type="application/pdf",
+            opener=opener,
+        )
+
+
+def test_retrieve_asset_accepts_pdf_signature_with_generic_content_type(tmp_path):
+    payload = b"%PDF-1.7\n% test fixture\n"
+
+    def opener(_request, *, timeout):
+        del timeout
+        return _Response(
+            payload,
+            url="https://example.org/official.pdf",
+            media_type="application/octet-stream",
+        )
+
+    asset = retrieve_asset(
+        organization_id="example",
+        asset_id="official_pdf",
+        url="https://example.org/official.pdf",
+        cache_root=tmp_path,
+        expected_media_type="application/pdf",
+        opener=opener,
+    )
+
+    assert asset.media_type == "application/pdf"
+    assert asset.path.read_bytes() == payload
+
+
 def test_zip_expansion_rejects_path_traversal(tmp_path):
     archive_path = tmp_path / "payload.zip"
     with zipfile.ZipFile(archive_path, "w") as archive:
