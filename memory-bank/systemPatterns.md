@@ -10,6 +10,10 @@
   lives in infrastructure and application layers.
 - **Fail closed:** unknown sources, stale hashes, incomplete bindings, unsafe
   controls, and missing human confirmation are rejected.
+- **Portable compilation:** content-derived source IDs and `urn:sha256:` URIs
+  make compile outputs deterministic without workstation absolute paths.
+- **Symmetric media validation:** online downloads and human-provided local
+  copies both validate PDF/DOCX/ZIP bytes, not only filenames or headers.
 
 ## Evidence State Machine
 
@@ -24,7 +28,8 @@ manifest, and span-hash verification is required for `verified`.
 
 ```text
 human login -> session gate -> value-free discovery -> hashed page map
-            -> human review -> requirement/control binding -> gated draft action
+            -> human review -> requirement/control binding
+            -> live fingerprint/type recheck -> gated draft action
 ```
 
 Submission and destructive actions have no MCP tool.

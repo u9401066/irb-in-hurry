@@ -71,7 +71,7 @@
           <article role="listitem">
             <span>01</span>
             <h3>來源擷取</h3>
-            <p>保存來源 URI、原始 byte SHA-256、文字 SHA-256 與不可變快取。</p>
+            <p>保存可攜式來源 URN、原始 byte SHA-256、文字 SHA-256 與不可變快取，不洩漏本機路徑。</p>
           </article>
           <article role="listitem">
             <span>02</span>
@@ -108,7 +108,7 @@
           </p>
           <p>
             執行主機無法連線時，可由人員從官方來源下載後使用 <code>import-local</code>；
-            工具驗證檔案簽章並保存取得模式，但仍不會跳過人工 evidence mapping。
+            線上與離線路徑都驗證實際檔案簽章並保存取得模式，但仍不會跳過人工 evidence mapping。
           </p>
           <a href="https://github.com/u9401066/irb-in-hurry/blob/main/src/irb_harness/contracts/kmuh.yml">檢視 KMUH 契約 →</a>
         </div>
@@ -130,7 +130,7 @@
           </article>
           <article>
             <h3>沒有送出工具</h3>
-            <p>submit、核准、撤案、終止及刪除不在 MCP surface；草稿寫入另有雙重開關。</p>
+            <p>submit、核准、撤案、終止及刪除不在 MCP surface；草稿寫入必須命中已審核 requirement/control 綁定。</p>
           </article>
           <article>
             <h3>拒絕 stale mapping</h3>

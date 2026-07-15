@@ -18,11 +18,18 @@ Refactor the fork into a multi-organization, citation-ready IRB harness:
   sanitized page mapping, and reviewed portal-control binding are implemented.
 - The KMUH default declares 11 sources, 8 form sets, 16 workflow events, and 9
   conservative requirements that remain `needs_evidence`.
-- The Browser MCP exposes discovery and gated draft/read operations, with no
-  submit, approval, withdrawal, termination, or delete tool.
+- The Browser MCP exposes discovery and reviewed draft/read operations, with no
+  submit, approval, withdrawal, termination, or delete tool. Draft writes must
+  resolve a content-addressed requirement/control binding and recheck the live
+  page, field metadata, value type, runtime switch, and human confirmation.
+- Generic document compilation now uses content-derived source IDs and portable
+  `urn:sha256:` identities, deduplicates identical bytes, omits absolute paths
+  and runtime timestamps, and produces deterministic outputs.
 - Declared official assets can now be imported from human-confirmed local copies
   when the execution host has no route to the institution; the same immutable
   evidence manifest and `needs_mapping` gate are preserved.
+- Online retrieval now applies the same PDF/DOCX/ZIP byte-signature checks, so
+  an HTML error response cannot be accepted as a declared official document.
 - The dependency-free GitHub Pages site is committed and Pages is configured for
   workflow deployment at `https://u9401066.github.io/irb-in-hurry/`; first
   deployment waits for PR #2 to merge to `main`.

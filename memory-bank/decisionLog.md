@@ -10,3 +10,5 @@
 | 2026-07-15 | Publish a dependency-free static GitHub Pages site. | Keeps documentation deployment small, auditable, and independent of a JavaScript build chain. |
 | 2026-07-15 | Develop on `agent/kmuh-irb-harness` with segmented commits. | The starting worktree contains unrelated assistant-harness assets that must not be staged silently. |
 | 2026-07-15 | Permit human-confirmed local copies of declared assets. | Remote execution hosts may not share institutional routing; offline acquisition must retain media validation, immutable hashes, acquisition provenance, and the same human mapping gate. |
+| 2026-07-15 | Make local compilation content-stable and path-free. | Organization contracts and evidence indexes must be portable across workstations and reproducible from identical bytes. |
+| 2026-07-15 | Require every browser draft write to resolve a reviewed portal requirement binding. | An arbitrary selector bypasses the contract boundary; mapping, control, field/value type, live fingerprint, runtime switch, and exact human confirmation must all agree. |

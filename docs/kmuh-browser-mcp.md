@@ -90,18 +90,26 @@ The initial server exposes:
   raw labels with SHA-256 identities; it does not write a local file;
 - `irb_click_reviewed_control`: clicks one control from a content-addressed
   mapping only after explicit confirmation and live fingerprint/risk rechecks;
-- `irb_fill_draft_field`: one explicitly confirmed draft field only.
+- `irb_fill_reviewed_requirement`: fills one portal requirement only after its
+  contract binding, mapping digest, control, field type, value type, and live
+  fingerprint are revalidated;
+- `irb_fill_draft_field`: compatibility selector API; arbitrary selectors are
+  rejected unless they resolve to exactly one reviewed requirement binding.
 
 Draft writes require both `IRB_WEB_WRITE_MODE=draft` and explicit confirmation
-for the exact field/value. Password, hidden, file, button, and submit controls are
-rejected. No submit, approval, withdrawal, termination, or delete tool is exposed.
+for the exact field/value. Password, hidden, file, radio, button, and submit
+controls are rejected. A receipt returns only the value SHA-256. No submit,
+approval, withdrawal, termination, or delete tool is exposed.
 
 When more than one `erec.kmuh.org.tw` tab is open, first call
 `irb_browser_list_pages` and pass its ephemeral `page_ref` (for example `c0p2`)
 to the status, discovery, mapping, or draft-fill tool. This prevents a stale
-login tab from being selected instead of the intended form. Login selectors are
-considered only when visible; hidden template controls do not trigger a false
-`human_login_required` result.
+login tab from being selected instead of the intended form. The same inventory
+is available as `uv run irb-contract list-pages`. Login selectors are considered
+only when visible; hidden template controls do not trigger a false
+`human_login_required` result. For a human-login site, discovery and writes also
+fail closed if an authenticated selector is not visible, rather than treating an
+unknown state as signed in.
 
 Reviewed read clicks are disabled by default. After inspecting the exact mapping
 and control, start the server with `IRB_WEB_CLICK_MODE=reviewed`; each call must
@@ -136,5 +144,9 @@ the separate `IRB_WEB_WRITE_MODE=draft` gate.
    `data_path`, and never records raw labels or current field values.
 7. The resulting contract binding remains content-addressed. A different live
    page fingerprint or control risk requires a new mapping and human review.
-8. Mapping regression tests use synthetic HTML fixtures; real case content is
+8. Start the MCP with `IRB_WEB_WRITE_MODE=draft`, then call
+   `irb_fill_reviewed_requirement` with the exact requirement, site, mapping
+   digest, field value, and `human_confirmed=true`. The tool rechecks the live
+   page and never submits.
+9. Mapping regression tests use synthetic HTML fixtures; real case content is
    never committed.

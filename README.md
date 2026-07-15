@@ -7,7 +7,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml/badge.svg)](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-61%20passed-brightgreen.svg)](#validation)
+[![Tests](https://img.shields.io/badge/tests-71%20passed-brightgreen.svg)](#validation)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -80,8 +80,10 @@ uv run irb-contract compile \
   --output output/contracts/example.yml
 ```
 
-The compiler records byte and text SHA-256 values, stable source/span IDs,
-line/character offsets, and short context. A reviewer then uses `map-evidence`
+The compiler records byte and text SHA-256 values, content-stable source/span
+IDs, line/character/UTF-8 byte offsets, and short context. Repeated identical inputs are
+deduplicated, outputs are deterministic, and neither the contract nor evidence
+index contains a workstation absolute path. A reviewer then uses `map-evidence`
 or `map-requirement` to bind explicit claims to selected spans.
 
 When the execution host cannot reach an institution's official URL, a human may
@@ -94,8 +96,10 @@ uv run irb-contract import-local \
   --human-confirmed-source
 ```
 
-The importer verifies the declared asset selection, file signature/container,
-stable bytes, and immutable cache copy. It records a local-copy acquisition mode
+Online retrieval and local import both verify the declared asset selection and
+file signature/container, so an HTML error page cannot masquerade as a PDF,
+DOCX, or ZIP. The importer also verifies stable bytes and the immutable cache
+copy. It records a local-copy acquisition mode
 without storing the original absolute path. Existing SHA-256 changes require
 explicit `--allow-revision`; import still stops at `needs_mapping`.
 
@@ -110,6 +114,7 @@ Protocol to a dedicated Chromium profile after a human signs in.
 
 ```bash
 uv run irb-contract browser-status
+uv run irb-contract list-pages
 uv run irb-contract session-status --site kmuh_eirb
 uv run irb-contract map-page --site kmuh_eirb
 uv run irb-web-mcp
@@ -119,6 +124,8 @@ Page mappings keep selectors, hashed identities, and action risk, but exclude
 field values, body text, case links, and raw labels. There are no submit,
 approval, withdrawal, termination, or delete MCP tools. Draft writes and reviewed
 read clicks each require separate runtime switches and exact human confirmation.
+Draft fields must also resolve through one reviewed portal requirement, mapping
+digest, and control binding; arbitrary selector writes fail closed.
 
 Remote SSH users must reverse-forward the desktop Chrome loopback port to the
 execution host. See the [KMUH Browser MCP guide](docs/kmuh-browser-mcp.md).
@@ -146,9 +153,9 @@ uv build
 git diff --check
 ```
 
-The 61 regression tests cover contract and evidence validation, immutable online
-and offline source acquisition, requirement mapping, portal-control binding,
-browser safety policy,
+The 71 regression tests cover deterministic path-free contract compilation,
+contract and evidence validation, signature-checked online and offline source
+acquisition, requirement mapping, reviewed portal writes, browser safety policy,
 the GitHub Pages site, and the retained KFSYSCC generation path.
 
 ## Project map

@@ -23,6 +23,12 @@ Last updated: 2026-07-15
   immutable evidence manifests, and explicit source-revision handling.
 - [x] Add Python 3.10/3.12 CI for locked install, lint, format, type checks,
   regression tests, and package build.
+- [x] Make multi-organization compilation deterministic, content-stable,
+  deduplicated, and free of workstation absolute paths.
+- [x] Validate actual media signatures for both online and offline declared
+  assets.
+- [x] Gate browser draft writes through reviewed requirement/control bindings,
+  live page/type checks, and value-type validation.
 
 ## Doing
 

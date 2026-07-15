@@ -36,6 +36,9 @@ def test_docs_site_has_accessible_core_sections_and_relative_assets():
     assert {"main", "architecture", "kmuh", "browser-mcp", "quickstart"} <= (parser.ids)
     assert "styles.css" in parser.asset_paths
     assert not any(path.startswith("/") for path in parser.asset_paths)
+    site = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
+    assert "不洩漏本機路徑" in site
+    assert "已審核 requirement/control 綁定" in site
 
 
 def test_pages_workflow_uses_official_artifact_deployment_actions():

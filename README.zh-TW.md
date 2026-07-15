@@ -5,14 +5,17 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml/badge.svg)](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-61%20passed-brightgreen.svg)](#測試)
+[![Tests](https://img.shields.io/badge/tests-71%20passed-brightgreen.svg)](#測試)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
-[![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#表單涵蓋範圍)
+[![Legacy forms](https://img.shields.io/badge/KFSYSCC%20forms-43%2F43-brightgreen.svg)](#kfsyscc-相容層表單涵蓋範圍)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-[和信治癌中心醫院](https://www.kfsyscc.org/) IRB（人體試驗委員會）送審文件自動化產生工具。
+IRB-in-Hurry 現在是一套以證據為核心的多組織 IRB harness：接收院方提供的 PDF、DOCX、HTML
+或文字文件，保存原始 bytes、穩定 locator 與人工審核決策，再產生可由文件與網站 adapter
+消費的組織契約。內建預設為高雄醫學大學附設中和紀念醫院（KMUH）。
 
-填入 YAML 設定檔中的研究資料，執行一行指令，即可產生所有必要的 IRB 送審表單 Word 文件 — 簽名後即可送出。
+本工具不會繞過倫理審查、不會自行推論院方規則，也不會自動送出 eIRB。舊有 KFSYSCC 43 份
+SF 表單產生器仍保留為明確命名的相容層，不得改標成 KMUH 表單。
 
 [English README](README.md)
 
@@ -20,7 +23,14 @@
 
 ---
 
-## 為什麼要做這個
+## 為什麼改成契約 Harness
+
+不同 IRB 的文件名稱、版本、審查分支、附件與入口網站都不相同。把某一家醫院的表單 ID
+硬寫進 generator，再換掉院名，無法證明規則來源，也可能產生錯誤文件。新的架構把來源文件、
+流程事件、需求、表單集合、網站政策與 evidence binding 分開；未取得官方 bytes 或未人工挑選
+span 的主張一律保持 `needs_evidence`。
+
+以下是這個專案原始 KFSYSCC 自動化工作的背景；相關產生器仍可使用，但位於歷史相容邊界內。
 
 人體試驗委員會（IRB）是醫學研究史上最重要的發明之一。它誕生於紐倫堡審判（1947年）的灰燼之中，經由赫爾辛基宣言（1964年）與貝爾蒙特報告（1979年）確立制度化。IRB 的存在，是為了確保沒有任何人在未經知情同意、適當風險評估與倫理監督的情況下被納入研究。這些是不可妥協的原則。塔斯基吉事件、731 部隊，以及無數醫學實驗的黑暗歷史，都在提醒我們為什麼需要它。
 
@@ -38,7 +48,18 @@
 
 ---
 
-## 功能特色
+## 目前主線功能
+
+- **多組織契約**：workspace 可放置 `organizations/<id>/contract.yml`，KMUH 為內建預設
+- **可重現文件編譯**：content-stable source/span ID、line/char/UTF-8 byte locator 與 SHA-256
+- **官方來源同步**：只取回契約宣告的 HTTPS URL，線上／離線皆驗證 PDF、DOCX、ZIP 簽章
+- **人工 evidence mapping**：傳輸成功只到 `needs_mapping`，不會冒充已驗證院方政策
+- **KMUH 事件流程**：16 個分支事件、11 個來源、8 組表單集合與 9 項保守候選需求
+- **人類登入式 Browser MCP**：不接收密碼；頁面 mapping 不含欄位值，草稿操作必須命中審核綁定
+- **無送出／刪除工具**：核准、送出、撤案、終止與刪除留在人類控制邊界
+- **GitHub Pages 與 CI**：說明站、Python 3.10/3.12 lint/type/test/build 持續驗證
+
+### KFSYSCC 歷史相容層
 
 - **涵蓋 11 類 IRB 審查**：新案、修正案、複審、期中、結案、嚴重不良反應、主持人手冊、專案進口、其他、暫停/終止、申覆
 - **43 個表單產生器**：依研究類型與送審階段自動選取所需表單
@@ -53,7 +74,7 @@
 - **Asset Aware MCP 轉檔後端**：可將文件輸出交給自訂命令轉成正確格式
 - **GitHub Pages 說明站**：清楚標示已實作能力、待驗證 KMUH 證據與安全操作方式
 
-## 表單涵蓋範圍
+## KFSYSCC 相容層表單涵蓋範圍
 
 所有表單皆依據 [和信治癌中心醫院 IRB 網站](https://www.kfsyscc.org/human/common_files/1)實作：
 
@@ -76,7 +97,7 @@
 
 ```bash
 # 1. 複製並安裝
-git clone https://github.com/htlin222/irb-in-hurry.git
+git clone https://github.com/u9401066/irb-in-hurry.git
 cd irb-in-hurry
 make setup
 
@@ -169,9 +190,13 @@ uv run irb-contract map-requirement \
   --update-output
 ```
 
-編譯器只做可重現的擷取、雜湊與 line/char locator；不會自行猜測送審規則。規則需由人員依 evidence index 審核後加入契約。
+編譯器只做可重現的擷取、雜湊與 line/char/UTF-8 byte locator；相同 bytes 會去重並取得相同 source ID，
+契約與 evidence index 不會保存工作站絕對路徑，重跑相同輸入可得到相同輸出。編譯器不會自行猜測
+送審規則；規則需由人員依 evidence index 審核後加入契約。
 `sync-sources` 只接受契約中宣告的 HTTPS 資產，查詢值會在 manifest 中遮蔽；下載成功仍標為
-`retrieved_needs_rule_mapping`，不等同內容已人工驗證。快取位於被 git 忽略的 `.irb-source-cache/`。
+`retrieved_needs_rule_mapping`，不等同內容已人工驗證。線上下載與離線匯入都會驗證
+PDF／DOCX／ZIP 實際簽章，避免把 200 OK 的 HTML 錯誤頁當成官方檔案。快取位於被 git 忽略的
+`.irb-source-cache/`。
 `import-local` 是來源網站無法由執行主機連線時的人工取得替代路徑：它要求明確 source identity
 確認、拒絕 symlink 與偽裝成 PDF／DOCX／ZIP 的檔案、不保存本機絕對路徑，並把 acquisition mode
 寫入 manifest。若既有契約 SHA-256 不同，必須另加 `--allow-revision`；舊雜湊會保存在 revision
@@ -189,6 +214,7 @@ Browser MCP 不接收帳號或密碼，只會 attach 到人類已登入的專用
 
 ```bash
 uv run irb-contract browser-status
+uv run irb-contract list-pages
 uv run irb-contract session-status --site kmuh_eirb
 uv run irb-contract map-page --site kmuh_eirb
 
@@ -204,13 +230,17 @@ uv run irb-contract bind-requirement-control \
 
 `map-page` 將 mapping 寫入 git 忽略的 `.irb-web-artifacts/`；保留可操作 selector 與風險類別，
 但不保存欄位值、頁面本文或原始 label。送出、撤案、終止與刪除操作沒有 MCP tool。
-若同時開了多個高醫分頁，先用 MCP 的 `irb_browser_list_pages` 取得 `page_ref`，再在上述
+若同時開了多個高醫分頁，可用 CLI `list-pages` 或 MCP `irb_browser_list_pages` 取得 `page_ref`，再在上述
 CLI 加上 `--page-ref c0pN`，可避免選到舊登入頁。
 唯讀按鈕操作也預設關閉；人工檢閱 content-addressed mapping 後，另設
 `IRB_WEB_CLICK_MODE=reviewed` 才能呼叫 `irb_click_reviewed_control`，而且每次仍需對指定
 `control_id` 明確確認。live fingerprint 或風險分類不同就會拒絕執行。
 `bind-requirement-control` 只接受 `portal_field` 與 input/select/textarea；頁面 mapping 的雜湊、
 selector、風險分類及人工審查決策會寫入契約，但原始 label 和欄位值不會寫入。
+草稿填寫應呼叫 MCP `irb_fill_reviewed_requirement`；它會再次比對 requirement、site、mapping SHA、
+control ID、selector、欄位型別、live fingerprint 與輸入 value type。舊的 `irb_fill_draft_field`
+僅保留相容性，任意 selector 不再可用。兩者都需要 `IRB_WEB_WRITE_MODE=draft` 與本次欄位／值的
+明確人工確認，結果只回傳 value SHA-256，不回傳原始值，也不會送出表單。
 
 ## 使用方式
 
@@ -331,8 +361,8 @@ automation:
 make test
 ```
 
-61 項測試涵蓋契約驗證、線上／離線來源雜湊與 locator、人工審核 requirement／portal 欄位綁定、
-安全下載／ZIP 解包、去識別化頁面 mapping、Browser MCP 安全政策，以及舊 KFSYSCC
+71 項測試涵蓋決定性且不含本機路徑的契約編譯、契約驗證、線上／離線來源簽章與 locator、
+人工審核 requirement／portal 欄位綁定與草稿寫入、安全下載／ZIP 解包、去識別化頁面 mapping、Browser MCP 安全政策，以及舊 KFSYSCC
 表單選取、GitHub Pages 說明站與端對端產生測試。
 
 ## 系統需求

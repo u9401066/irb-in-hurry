@@ -15,14 +15,21 @@ it with `organizations/kmuh/contract.yml`, or pass an explicit contract path.
 
 ## Evidence invariants
 
-`irb-contract compile` never edits source documents. For every input it records:
+`irb-contract compile` never edits source documents. For every unique byte
+identity it records:
 
-- source URI and byte size;
+- a portable `urn:sha256:` source URI and byte size;
 - SHA-256 of the original bytes;
 - SHA-256 of extracted text;
 - stable source and span IDs;
-- line and character offsets;
+- line, character, and UTF-8 byte offsets;
 - short surrounding context.
+
+Source IDs are derived from the complete byte hash, so renaming a file does not
+change its evidence identity. Identical inputs are deduplicated and sorted by
+content identity. The contract and evidence index exclude local absolute paths,
+and compilation omits runtime timestamps so identical inputs produce identical
+bytes.
 
 Contract compilation does not infer institutional requirements. It produces a
 `draft` with `rule_inference: not_performed`; a human maps workflow and explicit
@@ -32,9 +39,11 @@ requirements to evidence spans before the contract becomes authoritative.
 
 `irb-contract sync-sources` retrieves only URLs already declared in the selected
 contract. It requires HTTPS, rejects embedded credentials and cross-host
-redirects, imposes byte/member limits, and stores response bodies by SHA-256 in
-the ignored `.irb-source-cache/` directory. ZIP expansion rejects traversal,
-symlinks, duplicate paths, and unbounded output.
+redirects, compares response media metadata with actual PDF/DOCX/ZIP container
+signatures, imposes byte/member limits, and stores response bodies by SHA-256 in
+the ignored `.irb-source-cache/` directory. A successful HTML error page cannot
+be accepted as a declared PDF. ZIP expansion rejects traversal, symlinks,
+duplicate paths, and unbounded output.
 
 Each run produces an immutable JSON evidence manifest. A successful transport
 sets `evidence_status: retrieved_needs_rule_mapping`; it never upgrades evidence
@@ -89,6 +98,13 @@ contract stores the mapping hash, selector, and risk class, but not raw labels o
 field values. Only input, select, and textarea controls are eligible; hidden,
 password, submit, disabled, and destructive controls are rejected. A claimed
 portal mapping without its matching reviewed binding fails contract validation.
+
+Draft writes then resolve the portal requirement and revalidate the contract
+binding, mapping SHA-256, control ID, selector, action risk, declared value type,
+live field metadata, and page fingerprint. A control cannot be owned by two
+requirements. The compatibility selector API is accepted only when it resolves
+to exactly one such binding. Returned receipts contain a value hash, never the
+raw value, and no browser tool submits the form.
 
 ## Compatibility boundary
 
