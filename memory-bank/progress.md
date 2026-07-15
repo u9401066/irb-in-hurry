@@ -29,6 +29,8 @@ Last updated: 2026-07-15
   assets.
 - [x] Gate browser draft writes through reviewed requirement/control bindings,
   live page/type checks, and value-type validation.
+- [x] Let a newly compiled organization add or explicitly replace workflow
+  transitions from human definitions and verified evidence spans.
 
 ## Doing
 

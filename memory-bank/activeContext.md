@@ -25,6 +25,9 @@ Refactor the fork into a multi-organization, citation-ready IRB harness:
 - Generic document compilation now uses content-derived source IDs and portable
   `urn:sha256:` identities, deduplicates identical bytes, omits absolute paths
   and runtime timestamps, and produces deterministic outputs.
+- A new organization can now use `map-workflow` to create its first transition
+  from a human definition and verified spans; states and review-decision hashes
+  are recorded without automated rule inference.
 - Declared official assets can now be imported from human-confirmed local copies
   when the execution host has no route to the institution; the same immutable
   evidence manifest and `needs_mapping` gate are preserved.

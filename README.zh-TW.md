@@ -5,7 +5,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml/badge.svg)](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-71%20passed-brightgreen.svg)](#測試)
+[![Tests](https://img.shields.io/badge/tests-72%20passed-brightgreen.svg)](#測試)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![Legacy forms](https://img.shields.io/badge/KFSYSCC%20forms-43%2F43-brightgreen.svg)](#kfsyscc-相容層表單涵蓋範圍)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
@@ -166,6 +166,24 @@ uv run irb-contract map-evidence \
   --span 'kmuh:payload:<sha12>:L35' \
   --update-output
 
+# 新組織的 compile 草稿一開始沒有流程；由人員明確定義第一個 transition
+cat > /tmp/example-workflow.yml <<'YAML'
+event: submit_new
+from: draft
+to: submitted
+action_risk: submit
+human_confirmation: true
+YAML
+
+# 工具只採用重新核對過的 manifest/span，並自動加入定義中明列的 states
+uv run irb-contract map-workflow \
+  --contract output/contracts/example.yml \
+  --definition /tmp/example-workflow.yml \
+  --manifest output/contracts/example.evidence.json \
+  --source '<source-id>' \
+  --span '<source-id>:L1' \
+  --output organizations/example/contract.yml
+
 # 需求定義由審閱者明確撰寫；不得把 status 或 evidence_refs 塞進此檔案
 cat > /tmp/kmuh-requirement.yml <<'YAML'
 requirement_id: kmuh_new_submission_checklist
@@ -203,6 +221,9 @@ PDF／DOCX／ZIP 實際簽章，避免把 200 OK 的 HTML 錯誤頁當成官方�
 與 contract snapshot 紀錄中。離線匯入同樣只到 `needs_mapping`，不會自動成為 `verified`。
 工作流程規則只有在 `map-evidence` 同時核對契約來源雜湊、manifest 雜湊與 span ID 後，
 才會成為 `locator_status: verified`；工具不會自行猜測應選哪一段。
+新組織可用 `map-workflow` 從空白 workflow 建立或明確取代 transition；`from`、`to`、risk 與
+human confirmation 都由審閱者定義，caller 自帶的 evidence reference 會被移除，再改用已驗證 spans。
+新增 states、definition hash、manifest hash 與 `automated_rule_inference: false` 都會保存在決策紀錄。
 需求規則同理由 `map-requirement` 寫入：definition 是人員做出的判斷，工具只驗證所選來源與 locator，
 並保存 definition、manifest、span text 的雜湊。內建 KMUH 契約先列出 9 項候選需求，全部維持
 `needs_evidence`，直到官方檔案實際取回並逐段審核；這些候選項不是已證實的院方規則。
@@ -361,7 +382,7 @@ automation:
 make test
 ```
 
-71 項測試涵蓋決定性且不含本機路徑的契約編譯、契約驗證、線上／離線來源簽章與 locator、
+72 項測試涵蓋決定性且不含本機路徑的契約編譯、契約驗證、線上／離線來源簽章與 locator、
 人工審核 requirement／portal 欄位綁定與草稿寫入、安全下載／ZIP 解包、去識別化頁面 mapping、Browser MCP 安全政策，以及舊 KFSYSCC
 表單選取、GitHub Pages 說明站與端對端產生測試。
 

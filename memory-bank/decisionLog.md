@@ -12,3 +12,4 @@
 | 2026-07-15 | Permit human-confirmed local copies of declared assets. | Remote execution hosts may not share institutional routing; offline acquisition must retain media validation, immutable hashes, acquisition provenance, and the same human mapping gate. |
 | 2026-07-15 | Make local compilation content-stable and path-free. | Organization contracts and evidence indexes must be portable across workstations and reproducible from identical bytes. |
 | 2026-07-15 | Require every browser draft write to resolve a reviewed portal requirement binding. | An arbitrary selector bypasses the contract boundary; mapping, control, field/value type, live fingerprint, runtime switch, and exact human confirmation must all agree. |
+| 2026-07-15 | Add workflow transitions only from explicit definitions plus verified spans. | A newly compiled organization needs a supported path to its first workflow event without either guessing rules or requiring untracked manual YAML edits. |

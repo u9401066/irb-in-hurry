@@ -7,7 +7,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml/badge.svg)](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-71%20passed-brightgreen.svg)](#validation)
+[![Tests](https://img.shields.io/badge/tests-72%20passed-brightgreen.svg)](#validation)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -83,8 +83,9 @@ uv run irb-contract compile \
 The compiler records byte and text SHA-256 values, content-stable source/span
 IDs, line/character/UTF-8 byte offsets, and short context. Repeated identical inputs are
 deduplicated, outputs are deterministic, and neither the contract nor evidence
-index contains a workstation absolute path. A reviewer then uses `map-evidence`
-or `map-requirement` to bind explicit claims to selected spans.
+index contains a workstation absolute path. A reviewer then uses `map-workflow`
+to create or replace an explicit transition, `map-evidence` to bind an existing
+transition, or `map-requirement` to upsert a requirement from selected spans.
 
 When the execution host cannot reach an institution's official URL, a human may
 download that declared asset in a browser and copy it into the workspace:
@@ -153,7 +154,7 @@ uv build
 git diff --check
 ```
 
-The 71 regression tests cover deterministic path-free contract compilation,
+The 72 regression tests cover deterministic path-free contract compilation,
 contract and evidence validation, signature-checked online and offline source
 acquisition, requirement mapping, reviewed portal writes, browser safety policy,
 the GitHub Pages site, and the retained KFSYSCC generation path.

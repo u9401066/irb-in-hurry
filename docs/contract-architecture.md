@@ -35,6 +35,15 @@ Contract compilation does not infer institutional requirements. It produces a
 `draft` with `rule_inference: not_performed`; a human maps workflow and explicit
 requirements to evidence spans before the contract becomes authoritative.
 
+For a new organization whose compiled draft has an empty workflow,
+`irb-contract map-workflow` accepts a human-authored transition definition and
+human-selected spans. It removes caller-supplied evidence references, verifies
+the source/manifest/span hashes, adds only the `from`/`to` states explicitly
+named by that definition, and records a decision with
+`automated_rule_inference: false`. Replacing an existing transition requires an
+explicit flag. `map-evidence` remains the narrower operation for binding an
+already-declared transition.
+
 ## Official-source synchronization
 
 `irb-contract sync-sources` retrieves only URLs already declared in the selected
