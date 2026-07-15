@@ -7,7 +7,10 @@ import asyncio
 import pytest
 
 from irb_harness.application.page_mapping import sanitize_page_discovery
-from irb_harness.infrastructure.browser_session import BrowserController
+from irb_harness.infrastructure.browser_session import (
+    BrowserController,
+    HumanLoginRequired,
+)
 from irb_harness.infrastructure.contract_loader import load_contract
 from irb_harness.infrastructure.web_policy import BrowserPolicyError
 
@@ -52,6 +55,24 @@ class _ActionLocator(_Locator):
         self.clicked = True
 
 
+class _DraftLocator(_Locator):
+    def __init__(self) -> None:
+        super().__init__([True])
+        self.filled: str | None = None
+
+    async def evaluate(self, _script):
+        return {
+            "tag": "input",
+            "type": "text",
+            "label": "計畫名稱",
+            "disabled": False,
+            "readonly": False,
+        }
+
+    async def fill(self, value: str) -> None:
+        self.filled = value
+
+
 class _ActionPage(_Page):
     def __init__(self) -> None:
         super().__init__(
@@ -78,6 +99,41 @@ class _ActionPage(_Page):
     def locator(self, selector: str):
         if selector == "#Search":
             return self.action
+        return super().locator(selector)
+
+    async def title(self) -> str:
+        return self.page_title
+
+    async def evaluate(self, _script):
+        return [dict(control) for control in self.controls]
+
+
+class _DraftPage(_Page):
+    def __init__(self) -> None:
+        super().__init__(
+            "https://erec.kmuh.org.tw/RECManageSystem/Case/Edit",
+            {"a[href*='Account/Logout']": [True]},
+        )
+        self.page_title = "新案草稿"
+        self.field = _DraftLocator()
+        self.controls = [
+            {
+                "tag": "input",
+                "type": "text",
+                "id": "PlanName",
+                "name": "PlanName",
+                "label": "計畫名稱",
+                "selector": "#PlanName",
+                "required": True,
+                "disabled": False,
+                "readonly": False,
+                "option_count": None,
+            }
+        ]
+
+    def locator(self, selector: str):
+        if selector == "#PlanName":
+            return self.field
         return super().locator(selector)
 
     async def title(self) -> str:
@@ -143,6 +199,22 @@ def test_visible_login_control_requires_human_login(monkeypatch):
     assert status["page_ref"] == "c0p0"
 
 
+def test_unknown_human_login_state_cannot_be_used_for_discovery(monkeypatch):
+    website = load_contract().website("kmuh_eirb")
+    unknown = _Page(
+        "https://erec.kmuh.org.tw/RECManageSystem/Home/Index",
+        {},
+    )
+    controller = BrowserController("http://127.0.0.1:9")
+
+    async def connect():
+        return _Browser([unknown])
+
+    monkeypatch.setattr(controller, "connect", connect)
+    with pytest.raises(HumanLoginRequired, match="cannot be proven"):
+        asyncio.run(controller.discover_current_page(website))
+
+
 def test_reviewed_read_click_rechecks_live_page_fingerprint(monkeypatch):
     website = load_contract().website("kmuh_eirb")
     page = _ActionPage()
@@ -181,3 +253,46 @@ def test_reviewed_read_click_rechecks_live_page_fingerprint(monkeypatch):
             )
         )
     assert page.action.clicked is False
+
+
+def test_reviewed_draft_fill_rechecks_mapping_and_returns_only_value_hash(monkeypatch):
+    website = load_contract().website("kmuh_eirb")
+    page = _DraftPage()
+    controller = BrowserController("http://127.0.0.1:9")
+
+    async def connect():
+        return _Browser([page])
+
+    monkeypatch.setattr(controller, "connect", connect)
+    discovery = asyncio.run(controller.discover_current_page(website))
+    mapping = sanitize_page_discovery(discovery)
+    control_id = mapping["controls"][0]["control_id"]
+    monkeypatch.setenv("IRB_WEB_WRITE_MODE", "draft")
+
+    result = asyncio.run(
+        controller.fill_reviewed_control(
+            website,
+            mapping=mapping,
+            control_id=control_id,
+            value="測試計畫",
+            human_confirmed=True,
+        )
+    )
+    assert result["status"] == "reviewed_draft_field_filled"
+    assert result["submitted"] is False
+    assert result["value_sha256"]
+    assert "測試計畫" not in str(result)
+    assert page.field.filled == "測試計畫"
+
+    page.page_title = "頁面已變更"
+    with pytest.raises(BrowserPolicyError, match="fingerprint differs"):
+        asyncio.run(
+            controller.fill_reviewed_control(
+                website,
+                mapping=mapping,
+                control_id=control_id,
+                value="不可寫入",
+                human_confirmed=True,
+            )
+        )
+    assert page.field.filled == "測試計畫"

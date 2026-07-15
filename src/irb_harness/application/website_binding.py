@@ -88,6 +88,24 @@ def bind_requirement_to_control(
     if control.get("action_risk") in {"submit", "destructive"}:
         raise WebsiteBindingError("submit or destructive controls cannot be bound")
 
+    existing_control_owner = next(
+        (
+            item.get("requirement_id")
+            for item in original.get("website_bindings", [])
+            if isinstance(item, Mapping)
+            and item.get("site_id") == site_id
+            and item.get("page_mapping_sha256") == mapping_sha256
+            and item.get("control_id") == control_id
+            and item.get("requirement_id") != requirement_id
+        ),
+        None,
+    )
+    if existing_control_owner:
+        raise WebsiteBindingError(
+            "reviewed control is already bound to requirement: "
+            f"{existing_control_owner}"
+        )
+
     raw_requirements = original.get("requirements")
     if not isinstance(raw_requirements, list):
         raise WebsiteBindingError("contract requirements must be a list")

@@ -11,6 +11,10 @@ from irb_harness.application.page_mapping import (
     load_page_mapping,
     sanitize_page_discovery,
 )
+from irb_harness.application.portal_write import (
+    resolve_legacy_selector_write,
+    resolve_reviewed_portal_write,
+)
 from irb_harness.infrastructure.browser_session import BrowserController
 from irb_harness.infrastructure.contract_loader import contract_sha256, load_contract
 
@@ -141,19 +145,71 @@ async def irb_fill_draft_field(
     organization_id: str = "kmuh",
     page_ref: str | None = None,
 ) -> dict[str, Any]:
-    """Fill one draft field after explicit human confirmation; never submits the page.
+    """Compatibility entry point for one previously reviewed draft field.
 
-    The server must also be started with IRB_WEB_WRITE_MODE=draft. Do not set
-    human_confirmed unless the user explicitly approved this exact field and value.
+    Arbitrary selectors are rejected: the selector must resolve to exactly one
+    contract requirement and content-addressed page-map binding. The server must
+    be started with IRB_WEB_WRITE_MODE=draft. Do not set human_confirmed unless
+    the user explicitly approved this exact field and value.
     """
     contract = load_contract(organization_id=organization_id)
-    return await _browser.fill_draft_field(
-        contract.website(site_id),
+    target = resolve_legacy_selector_write(
+        contract,
+        site_id=site_id,
         selector=selector,
         value=value,
+        mapping_root=os.environ.get("IRB_WEB_MAPPING_ROOT", ".irb-web-artifacts"),
+    )
+    result = await _browser.fill_reviewed_control(
+        target.website,
+        mapping=target.mapping,
+        control_id=target.binding.control_id,
+        value=target.value,
         human_confirmed=human_confirmed,
         page_ref=page_ref,
     )
+    result["requirement_id"] = target.requirement.requirement_id
+    result["selector"] = selector
+    result["contract_sha256"] = contract_sha256(contract)
+    return result
+
+
+@mcp.tool()
+async def irb_fill_reviewed_requirement(
+    site_id: str,
+    requirement_id: str,
+    mapping_sha256: str,
+    value: str,
+    human_confirmed: bool = False,
+    organization_id: str = "kmuh",
+    page_ref: str | None = None,
+) -> dict[str, Any]:
+    """Fill one reviewed portal requirement after exact human confirmation.
+
+    The requirement, site, mapping digest, control identity, selector, field type,
+    live page fingerprint, and value type are all revalidated. No raw value is
+    returned, and this tool never submits the page.
+    """
+    contract = load_contract(organization_id=organization_id)
+    target = resolve_reviewed_portal_write(
+        contract,
+        requirement_id=requirement_id,
+        site_id=site_id,
+        mapping_sha256=mapping_sha256,
+        value=value,
+        mapping_root=os.environ.get("IRB_WEB_MAPPING_ROOT", ".irb-web-artifacts"),
+    )
+    result = await _browser.fill_reviewed_control(
+        target.website,
+        mapping=target.mapping,
+        control_id=target.binding.control_id,
+        value=target.value,
+        human_confirmed=human_confirmed,
+        page_ref=page_ref,
+    )
+    result["requirement_id"] = target.requirement.requirement_id
+    result["contract_sha256"] = contract_sha256(contract)
+    return result
 
 
 def main() -> None:

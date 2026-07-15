@@ -128,6 +128,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     browser_status.add_argument("--endpoint")
 
+    list_pages = subcommands.add_parser(
+        "list-pages", help="list open pages without titles or form values"
+    )
+    list_pages.add_argument("--endpoint")
+
     session_status = subcommands.add_parser(
         "session-status", help="check whether an open institution page is authenticated"
     )
@@ -349,6 +354,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             json.dumps(
                 BrowserController(args.endpoint).endpoint_status(),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0
+    if args.command == "list-pages":
+        print(
+            json.dumps(
+                asyncio.run(BrowserController(args.endpoint).list_pages()),
                 ensure_ascii=False,
                 indent=2,
             )

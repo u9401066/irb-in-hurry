@@ -22,6 +22,7 @@ def test_mcp_surface_has_discovery_and_no_submit_or_delete_tools():
     assert "irb_sanitized_page_mapping" in names
     assert "irb_click_reviewed_control" in names
     assert "irb_fill_draft_field" in names
+    assert "irb_fill_reviewed_requirement" in names
     assert not any("submit" in name or "delete" in name for name in names)
 
 

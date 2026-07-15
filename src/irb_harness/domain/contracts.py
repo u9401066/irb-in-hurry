@@ -468,12 +468,30 @@ class WebSiteContract:
         policy = value.get("action_policy", {})
         if not isinstance(policy, Mapping):
             raise ContractValidationError("website action_policy must be a mapping")
+        login_mode = str(login.get("mode", "human"))
+        if login_mode not in {"human", "public"}:
+            raise ContractValidationError("website login mode must be human or public")
+        read_actions = str(policy.get("read_actions", "disabled"))
+        if read_actions == "reviewed_only":
+            read_actions = "explicit_confirmation"
+        if read_actions not in {"disabled", "explicit_confirmation"}:
+            raise ContractValidationError(
+                "website read_actions must be disabled or explicit_confirmation"
+            )
+        draft_writes = str(policy.get("draft_writes", "disabled"))
+        if draft_writes not in {"disabled", "explicit_confirmation"}:
+            raise ContractValidationError(
+                "website draft_writes must be disabled or explicit_confirmation"
+            )
+        submissions = str(policy.get("submissions", "human_only"))
+        if submissions != "human_only":
+            raise ContractValidationError("website submissions must remain human_only")
         return cls(
             site_id=_required_string(value, "site_id"),
             title=_required_string(value, "title"),
             start_url=start_url,
             allowed_hosts=hosts,
-            login_mode=str(login.get("mode", "human")),
+            login_mode=login_mode,
             unauthenticated_selectors=_string_tuple(
                 login.get("unauthenticated_selectors", []),
                 "unauthenticated_selectors",
@@ -482,9 +500,9 @@ class WebSiteContract:
                 login.get("authenticated_selectors", []),
                 "authenticated_selectors",
             ),
-            read_actions=str(policy.get("read_actions", "disabled")),
-            draft_writes=str(policy.get("draft_writes", "disabled")),
-            submissions=str(policy.get("submissions", "human_only")),
+            read_actions=read_actions,
+            draft_writes=draft_writes,
+            submissions=submissions,
         )
 
 
@@ -624,6 +642,7 @@ class OrganizationContract:
                     f"website '{requirement.website_site_id}'"
                 )
         website_binding_by_requirement: dict[str, WebsiteControlBinding] = {}
+        website_control_owners: dict[tuple[str, str, str], str] = {}
         for website_binding in self.website_bindings:
             if website_binding.requirement_id in website_binding_by_requirement:
                 raise ContractValidationError(
@@ -633,6 +652,18 @@ class OrganizationContract:
             website_binding_by_requirement[website_binding.requirement_id] = (
                 website_binding
             )
+            control_key = (
+                website_binding.site_id,
+                website_binding.page_mapping_sha256,
+                website_binding.control_id,
+            )
+            previous_owner = website_control_owners.get(control_key)
+            if previous_owner is not None:
+                raise ContractValidationError(
+                    "reviewed website control is bound to more than one requirement: "
+                    f"'{previous_owner}', '{website_binding.requirement_id}'"
+                )
+            website_control_owners[control_key] = website_binding.requirement_id
             bound_requirement = requirements_by_id.get(website_binding.requirement_id)
             if bound_requirement is None:
                 raise ContractValidationError(

@@ -10,6 +10,7 @@ from irb_harness.infrastructure.web_policy import (
     BrowserPolicyError,
     assert_allowed_url,
     classify_action,
+    classify_control,
     page_fingerprint,
     redact_url,
 )
@@ -49,6 +50,14 @@ def test_allowed_url_is_contract_scoped():
 )
 def test_action_risk_classification(label, element_type, expected):
     assert classify_action(label, element_type=element_type) is expected
+
+
+def test_field_label_is_classified_as_draft_write_not_submit_action():
+    assert (
+        classify_control("申請人姓名", tag="input", element_type="text")
+        is ActionRisk.DRAFT_WRITE
+    )
+    assert classify_control("刪除理由", tag="textarea") is ActionRisk.DRAFT_WRITE
 
 
 def test_page_fingerprint_does_not_depend_on_query_values():

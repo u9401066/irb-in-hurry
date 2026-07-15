@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import yaml
+import pytest
+
 from irb_harness.application.page_mapping import (
     sanitize_page_discovery,
     write_page_mapping,
@@ -123,3 +126,44 @@ def test_portal_requirement_rejects_destructive_mapped_control(tmp_path):
         assert "submit or destructive" in str(exc)
     else:
         raise AssertionError("destructive control binding must be rejected")
+
+
+def test_one_reviewed_control_cannot_bind_two_requirements(tmp_path):
+    discovery = _discovery(action_risk="draft_write")
+    mapping = sanitize_page_discovery(discovery)
+    mapping_path = (
+        tmp_path / "maps" / "kmuh" / "kmuh_eirb" / f"{mapping['mapping_sha256']}.json"
+    )
+    write_page_mapping(discovery, mapping_path)
+    control_id = mapping["controls"][0]["control_id"]
+    first_output = tmp_path / "first.yml"
+    contract = _contract_with_portal_requirement()
+    bind_requirement_to_control(
+        contract,
+        requirement_id="kmuh_portal_plan_name",
+        site_id="kmuh_eirb",
+        mapping_sha256=mapping["mapping_sha256"],
+        control_id=control_id,
+        output_path=first_output,
+        mapping_root=tmp_path / "maps",
+        cache_root=tmp_path / "cache",
+    )
+    updated = yaml.safe_load(first_output.read_text(encoding="utf-8"))
+    second = dict(updated["requirements"][-1])
+    second["requirement_id"] = "kmuh_portal_plan_name_duplicate"
+    second.pop("website_site_id", None)
+    second.pop("page_mapping_sha256", None)
+    second.pop("control_id", None)
+    updated["requirements"].append(second)
+
+    with pytest.raises(WebsiteBindingError, match="already bound"):
+        bind_requirement_to_control(
+            updated,
+            requirement_id="kmuh_portal_plan_name_duplicate",
+            site_id="kmuh_eirb",
+            mapping_sha256=mapping["mapping_sha256"],
+            control_id=control_id,
+            output_path=tmp_path / "second.yml",
+            mapping_root=tmp_path / "maps",
+            cache_root=tmp_path / "cache",
+        )

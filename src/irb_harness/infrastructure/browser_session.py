@@ -14,6 +14,7 @@ from irb_harness.infrastructure.web_policy import (
     BrowserPolicyError,
     assert_allowed_url,
     classify_action,
+    classify_control,
     page_fingerprint,
     redact_url,
 )
@@ -144,8 +145,9 @@ class BrowserController:
         title = await page.title()
         controls = await page.evaluate(_DISCOVERY_SCRIPT)
         for control in controls:
-            control["action_risk"] = classify_action(
+            control["action_risk"] = classify_control(
                 control.get("label", ""),
+                tag=control.get("tag", ""),
                 element_type=control.get("type", ""),
             ).value
         labels = [control.get("label", "") for control in controls]
@@ -212,6 +214,126 @@ class BrowserController:
             "page_ref": resolved_ref,
             "selector": selector,
             "status": "draft_field_filled",
+            "value_sha256": hashlib.sha256(value.encode("utf-8")).hexdigest(),
+            "submitted": False,
+        }
+
+    async def fill_reviewed_control(
+        self,
+        website: WebSiteContract,
+        *,
+        mapping: Mapping[str, Any],
+        control_id: str,
+        value: str,
+        human_confirmed: bool,
+        page_ref: str | None = None,
+    ) -> dict[str, Any]:
+        """Fill one content-addressed, reviewed draft field without submitting."""
+        if os.environ.get("IRB_WEB_WRITE_MODE") != "draft":
+            raise BrowserPolicyError(
+                "draft writes are disabled; set IRB_WEB_WRITE_MODE=draft explicitly"
+            )
+        if website.draft_writes != "explicit_confirmation":
+            raise BrowserPolicyError(
+                f"draft writes are disabled by contract for site '{website.site_id}'"
+            )
+        if not human_confirmed:
+            raise BrowserPolicyError(
+                "a human must explicitly confirm this reviewed draft field write"
+            )
+        if mapping.get("site_id") != website.site_id:
+            raise BrowserPolicyError(
+                "page mapping does not belong to the selected site"
+            )
+        control = _reviewed_control(mapping, control_id)
+        if control.get("tag") not in {"input", "select", "textarea"}:
+            raise BrowserPolicyError("reviewed control is not a fillable field")
+        if control.get("type") in {
+            "button",
+            "file",
+            "hidden",
+            "image",
+            "password",
+            "radio",
+            "reset",
+            "submit",
+        }:
+            raise BrowserPolicyError(
+                f"reviewed field type is not draft-fillable: {control.get('type')}"
+            )
+        if control.get("disabled") is True or control.get("readonly") is True:
+            raise BrowserPolicyError(
+                "disabled or readonly reviewed controls cannot be filled"
+            )
+        if control.get("action_risk") not in {
+            ActionRisk.READ.value,
+            ActionRisk.DRAFT_WRITE.value,
+        }:
+            raise BrowserPolicyError(
+                "reviewed control is not approved for a draft write"
+            )
+        selector = str(control.get("selector") or "")
+        if not selector:
+            raise BrowserPolicyError("reviewed control is missing a selector")
+
+        page, resolved_ref = await self._require_authenticated_page(
+            website, page_ref=page_ref
+        )
+        discovery = await self.discover_current_page(website, page_ref=resolved_ref)
+        if discovery["page_fingerprint"] != mapping.get("page_fingerprint"):
+            raise BrowserPolicyError(
+                "live page fingerprint differs from the reviewed mapping"
+            )
+        locator = page.locator(selector)
+        count = await locator.count()
+        if count != 1:
+            raise BrowserPolicyError(
+                f"reviewed selector must match exactly one element; matched {count}"
+            )
+        metadata = await locator.evaluate(_FIELD_METADATA_SCRIPT)
+        live_tag = str(metadata.get("tag", "")).lower()
+        live_type = str(metadata.get("type", "")).lower()
+        if live_tag != control.get("tag") or live_type != control.get("type"):
+            raise BrowserPolicyError(
+                "live field metadata differs from the reviewed mapping"
+            )
+        if metadata.get("disabled") is True or metadata.get("readonly") is True:
+            raise BrowserPolicyError("live field is disabled or readonly")
+        live_risk = classify_control(
+            str(metadata.get("label", "")),
+            tag=live_tag,
+            element_type=live_type,
+        )
+        if live_risk is not ActionRisk.DRAFT_WRITE:
+            raise BrowserPolicyError(
+                f"live control is classified as {live_risk.value} and cannot be filled"
+            )
+
+        if live_tag == "select":
+            await locator.select_option(value)
+            write_strategy = "select_option"
+        elif live_type == "checkbox":
+            normalized = value.strip().lower()
+            if normalized not in {"true", "false"}:
+                raise BrowserPolicyError(
+                    "checkbox fields require an exact true or false value"
+                )
+            if normalized == "true":
+                await locator.check()
+                write_strategy = "check"
+            else:
+                await locator.uncheck()
+                write_strategy = "uncheck"
+        else:
+            await locator.fill(value)
+            write_strategy = "fill"
+        return {
+            "site_id": website.site_id,
+            "page_ref": resolved_ref,
+            "mapping_sha256": mapping.get("mapping_sha256"),
+            "control_id": control_id,
+            "status": "reviewed_draft_field_filled",
+            "write_strategy": write_strategy,
             "value_sha256": hashlib.sha256(value.encode("utf-8")).hexdigest(),
             "submitted": False,
         }
@@ -313,6 +435,12 @@ class BrowserController:
             raise HumanLoginRequired(
                 f"human login required in the attached Chrome page for site '{website.site_id}'"
             )
+        if website.login_mode == "human" and not await _any_selector_visible(
+            page, website.authenticated_selectors
+        ):
+            raise HumanLoginRequired(
+                "human authentication state cannot be proven in the attached page"
+            )
         if resolved_ref is None:
             raise BrowserUnavailable("attached page is missing a page reference")
         return page, resolved_ref
@@ -359,6 +487,22 @@ def _connection_reason(reason: Any) -> str:
     if "name or service" in text or "getaddrinfo" in text:
         return "dns_resolution_failed"
     return normalized or "connection_failed"
+
+
+def _reviewed_control(mapping: Mapping[str, Any], control_id: str) -> Mapping[str, Any]:
+    controls = mapping.get("controls")
+    if not isinstance(controls, list):
+        raise BrowserPolicyError("page mapping controls are invalid")
+    matches = [
+        control
+        for control in controls
+        if isinstance(control, Mapping) and control.get("control_id") == control_id
+    ]
+    if len(matches) != 1:
+        raise BrowserPolicyError(
+            "control_id must exist exactly once in the reviewed mapping"
+        )
+    return matches[0]
 
 
 _DISCOVERY_SCRIPT = """
@@ -415,7 +559,9 @@ _FIELD_METADATA_SCRIPT = """
   return {
     tag: element.tagName.toLowerCase(),
     type: (element.getAttribute('type') || '').toLowerCase(),
-    label: normalize(label)
+    label: normalize(label),
+    disabled: Boolean(element.disabled),
+    readonly: Boolean(element.readOnly)
   };
 }
 """

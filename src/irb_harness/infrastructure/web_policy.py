@@ -70,6 +70,27 @@ def classify_action(label: str, *, element_type: str = "") -> ActionRisk:
     return ActionRisk.READ
 
 
+def classify_control(
+    label: str,
+    *,
+    tag: str = "",
+    element_type: str = "",
+) -> ActionRisk:
+    """Classify fields as draft writes without treating their labels as actions."""
+    normalized_tag = tag.lower()
+    normalized_type = element_type.lower()
+    if normalized_tag in {"select", "textarea"}:
+        return ActionRisk.DRAFT_WRITE
+    if normalized_tag == "input" and normalized_type not in {
+        "button",
+        "image",
+        "reset",
+        "submit",
+    }:
+        return ActionRisk.DRAFT_WRITE
+    return classify_action(label, element_type=element_type)
+
+
 def page_fingerprint(url: str, title: str, control_labels: Iterable[str]) -> str:
     normalized_labels = [re.sub(r"\s+", " ", label).strip() for label in control_labels]
     material = "\n".join([redact_url(url), title.strip(), *normalized_labels])
