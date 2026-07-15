@@ -106,6 +106,10 @@
             契約先宣告 SOP、表單集合、流程與候選需求。官方文件尚未成功取回以前，
             locator 保持 <code>needs_retrieval</code>；取回後也只會先升為 <code>needs_mapping</code>。
           </p>
+          <p>
+            執行主機無法連線時，可由人員從官方來源下載後使用 <code>import-local</code>；
+            工具驗證檔案簽章並保存取得模式，但仍不會跳過人工 evidence mapping。
+          </p>
           <a href="https://github.com/u9401066/irb-in-hurry/blob/main/src/irb_harness/contracts/kmuh.yml">檢視 KMUH 契約 →</a>
         </div>
       </section>
@@ -148,6 +152,12 @@ uv run irb-contract requirements \
   --submission-type new \
   --review-track general \
   --workflow-event submit_new
+
+# 網路不可達時，匯入人類已核對來源的官方檔案
+uv run irb-contract import-local \
+  --source kmuh_sop_02_01 \
+  --file /path/to/official.pdf \
+  --human-confirmed-source
 
 # Chrome bridge 只檢查人類已登入的既有 session
 uv run irb-contract browser-status</code></pre>

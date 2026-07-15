@@ -19,6 +19,8 @@ Last updated: 2026-07-15
 - [x] Add a GitHub Pages documentation site and deployment workflow.
 - [x] Push `agent/kmuh-irb-harness`, open draft PR #2, and enable workflow-based
   GitHub Pages for the repository.
+- [x] Add a human-confirmed local asset import path with signature checks,
+  immutable evidence manifests, and explicit source-revision handling.
 
 ## Doing
 

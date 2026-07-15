@@ -4,7 +4,7 @@
 > 預設契約為 KMUH；舊有 `scripts/generators` 仍屬 KFSYSCC 相容層，尚不可視為 KMUH 正式表單。
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-56%20passed-brightgreen.svg)](#測試)
+[![Tests](https://img.shields.io/badge/tests-60%20passed-brightgreen.svg)](#測試)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#表單涵蓋範圍)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
@@ -119,6 +119,21 @@ uv run irb-contract sync-sources \
   --form-set kmuh_general_new \
   --update-output
 
+# Remote SSH host 無法連到院方來源時：先由人類從契約宣告的官方 URL 下載，
+# 將檔案複製到 workspace，再明確確認它對應到指定 source_id 後離線匯入
+uv run irb-contract import-local \
+  --source kmuh_sop_02_01 \
+  --file /path/to/official/KMUH-SOP-02-01.pdf \
+  --human-confirmed-source
+
+# 官方表單 ZIP 也可用同一條安全解包與 evidence manifest 路徑匯入
+uv run irb-contract import-local \
+  --contract organizations/kmuh/contract.yml \
+  --form-set kmuh_general_new \
+  --file /path/to/official/KMUH-general-new.zip \
+  --human-confirmed-source \
+  --update-output
+
 # 人工檢閱 manifest 的 context/hash 後，把規則綁到確切 span；工具會再次核對
 # 來源 byte SHA-256 與 span ID，然後才把 locator_status 升為 verified
 uv run irb-contract map-evidence \
@@ -156,6 +171,10 @@ uv run irb-contract map-requirement \
 編譯器只做可重現的擷取、雜湊與 line/char locator；不會自行猜測送審規則。規則需由人員依 evidence index 審核後加入契約。
 `sync-sources` 只接受契約中宣告的 HTTPS 資產，查詢值會在 manifest 中遮蔽；下載成功仍標為
 `retrieved_needs_rule_mapping`，不等同內容已人工驗證。快取位於被 git 忽略的 `.irb-source-cache/`。
+`import-local` 是來源網站無法由執行主機連線時的人工取得替代路徑：它要求明確 source identity
+確認、拒絕 symlink 與偽裝成 PDF／DOCX／ZIP 的檔案、不保存本機絕對路徑，並把 acquisition mode
+寫入 manifest。若既有契約 SHA-256 不同，必須另加 `--allow-revision`；舊雜湊會保存在 revision
+與 contract snapshot 紀錄中。離線匯入同樣只到 `needs_mapping`，不會自動成為 `verified`。
 工作流程規則只有在 `map-evidence` 同時核對契約來源雜湊、manifest 雜湊與 span ID 後，
 才會成為 `locator_status: verified`；工具不會自行猜測應選哪一段。
 需求規則同理由 `map-requirement` 寫入：definition 是人員做出的判斷，工具只驗證所選來源與 locator，
@@ -311,7 +330,7 @@ automation:
 make test
 ```
 
-56 項測試涵蓋契約驗證、來源雜湊與 locator、人工審核 requirement／portal 欄位綁定、
+60 項測試涵蓋契約驗證、線上／離線來源雜湊與 locator、人工審核 requirement／portal 欄位綁定、
 安全下載／ZIP 解包、去識別化頁面 mapping、Browser MCP 安全政策，以及舊 KFSYSCC
 表單選取、GitHub Pages 說明站與端對端產生測試。
 

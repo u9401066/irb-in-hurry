@@ -6,7 +6,7 @@
 > KFSYSCC compatibility layer and are not official KMUH forms.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-56%20passed-brightgreen.svg)](#validation)
+[![Tests](https://img.shields.io/badge/tests-60%20passed-brightgreen.svg)](#validation)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -83,6 +83,21 @@ The compiler records byte and text SHA-256 values, stable source/span IDs,
 line/character offsets, and short context. A reviewer then uses `map-evidence`
 or `map-requirement` to bind explicit claims to selected spans.
 
+When the execution host cannot reach an institution's official URL, a human may
+download that declared asset in a browser and copy it into the workspace:
+
+```bash
+uv run irb-contract import-local \
+  --source kmuh_sop_02_01 \
+  --file /path/to/official/KMUH-SOP-02-01.pdf \
+  --human-confirmed-source
+```
+
+The importer verifies the declared asset selection, file signature/container,
+stable bytes, and immutable cache copy. It records a local-copy acquisition mode
+without storing the original absolute path. Existing SHA-256 changes require
+explicit `--allow-revision`; import still stops at `needs_mapping`.
+
 See [README.zh-TW.md](README.zh-TW.md) for the complete synchronization and
 mapping commands, and [contract architecture](docs/contract-architecture.md)
 for the invariants.
@@ -130,8 +145,9 @@ uv build
 git diff --check
 ```
 
-The 56 regression tests cover contract and evidence validation, immutable source
-retrieval, requirement mapping, portal-control binding, browser safety policy,
+The 60 regression tests cover contract and evidence validation, immutable online
+and offline source acquisition, requirement mapping, portal-control binding,
+browser safety policy,
 the GitHub Pages site, and the retained KFSYSCC generation path.
 
 ## Project map

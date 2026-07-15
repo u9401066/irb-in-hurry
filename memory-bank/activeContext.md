@@ -20,6 +20,9 @@ Refactor the fork into a multi-organization, citation-ready IRB harness:
   conservative requirements that remain `needs_evidence`.
 - The Browser MCP exposes discovery and gated draft/read operations, with no
   submit, approval, withdrawal, termination, or delete tool.
+- Declared official assets can now be imported from human-confirmed local copies
+  when the execution host has no route to the institution; the same immutable
+  evidence manifest and `needs_mapping` gate are preserved.
 - The dependency-free GitHub Pages site is committed and Pages is configured for
   workflow deployment at `https://u9401066.github.io/irb-in-hurry/`; first
   deployment waits for PR #2 to merge to `main`.
@@ -33,7 +36,7 @@ Refactor the fork into a multi-organization, citation-ready IRB harness:
   `RemoteForward 127.0.0.1:9222 127.0.0.1:9222` and reconnect.
 - The Remote SSH host cannot retrieve the official KMUH source bytes. Evidence
   hashes and locators must stay unverified until routing is available or the
-  official files are copied into the workspace.
+  official files are copied into the workspace and processed with `import-local`.
 
 ## Next Verification
 

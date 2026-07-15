@@ -43,6 +43,16 @@ to `verified`. The generated workspace override is
 unless `--update-output` is explicit, and the previous bytes are first preserved
 as a content-addressed cache snapshot.
 
+If an execution host cannot reach the declared HTTPS source, `irb-contract
+import-local` accepts one file that a human downloaded from that source. It
+requires explicit source-identity confirmation, rejects symlinks and invalid
+PDF/DOCX/ZIP signatures, detects files that change during copying, and writes the
+same immutable cache and evidence-manifest shape as online synchronization. The
+manifest records `human_provided_local_copy` without persisting the source
+machine's absolute path or raw filename. A changed contract SHA-256 requires an
+explicit revision flag and preserves the superseded hash plus contract snapshot.
+Local acquisition never skips the `needs_mapping` review state.
+
 Workflow transitions and institutional requirements carry `evidence_refs`.
 Before retrieval, a reference is `needs_retrieval`; source synchronization
 advances it only to `needs_mapping`.
