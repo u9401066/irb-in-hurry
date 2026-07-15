@@ -22,6 +22,7 @@ from irb_harness.application.source_sync import (
     sync_contract_sources,
 )
 from irb_harness.application.website_binding import bind_requirement_to_control
+from irb_harness.application.workflow_mapping import map_workflow_from_evidence
 from irb_harness.infrastructure.browser_session import BrowserController
 from irb_harness.infrastructure.contract_loader import (
     contract_sha256,
@@ -106,6 +107,22 @@ def build_parser() -> argparse.ArgumentParser:
     map_evidence.add_argument("--cache", default=".irb-source-cache")
     map_evidence.add_argument("--output")
     map_evidence.add_argument("--update-output", action="store_true")
+
+    map_workflow = subcommands.add_parser(
+        "map-workflow",
+        help="add or replace a reviewed workflow transition using verified evidence",
+    )
+    map_workflow.add_argument("--contract")
+    map_workflow.add_argument("--organization", default="kmuh")
+    map_workflow.add_argument("--definition", required=True)
+    map_workflow.add_argument("--manifest", required=True)
+    map_workflow.add_argument("--source", required=True)
+    map_workflow.add_argument("--span", action="append", required=True)
+    map_workflow.add_argument("--locator-hint")
+    map_workflow.add_argument("--cache", default=".irb-source-cache")
+    map_workflow.add_argument("--output")
+    map_workflow.add_argument("--replace-transition", action="store_true")
+    map_workflow.add_argument("--update-output", action="store_true")
 
     map_requirement = subcommands.add_parser(
         "map-requirement",
@@ -304,6 +321,45 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "span_ids": evidence_result.span_ids,
                     "evidence_manifest_sha256": (
                         evidence_result.evidence_manifest_sha256
+                    ),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
+        return 0
+    if args.command == "map-workflow":
+        mapping = load_contract_mapping(
+            args.contract, organization_id=args.organization
+        )
+        definition_path = Path(args.definition).expanduser().resolve()
+        definition = yaml.safe_load(definition_path.read_text(encoding="utf-8"))
+        if not isinstance(definition, dict):
+            raise ValueError("workflow definition root must be a mapping")
+        output = args.output or f"organizations/{args.organization}/contract.yml"
+        workflow_result = map_workflow_from_evidence(
+            mapping,
+            transition_definition=definition,
+            evidence_manifest_path=args.manifest,
+            source_document_id=args.source,
+            span_ids=args.span,
+            output_path=output,
+            locator_hint=args.locator_hint,
+            cache_root=args.cache,
+            replace_transition=args.replace_transition,
+            update_output=args.update_output,
+        )
+        print(
+            json.dumps(
+                {
+                    "contract": str(workflow_result.contract_path),
+                    "transition": workflow_result.transition_event,
+                    "source": workflow_result.source_document_id,
+                    "span_ids": workflow_result.span_ids,
+                    "states_added": workflow_result.states_added,
+                    "definition_sha256": workflow_result.definition_sha256,
+                    "evidence_manifest_sha256": (
+                        workflow_result.evidence_manifest_sha256
                     ),
                 },
                 ensure_ascii=False,
