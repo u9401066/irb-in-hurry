@@ -1,7 +1,11 @@
 # IRB-in-Hurry
 
+> 架構翻新中：新的 `irb_harness` 核心以「組織文件 → 可追溯契約 → 文件／網站 adapter」為模型，
+> 預設契約為 KMUH；舊有 `scripts/generators` 仍屬 KFSYSCC 相容層，尚不可視為 KMUH 正式表單。
+
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-15%20passed-brightgreen.svg)](#測試)
+[![Tests](https://img.shields.io/badge/tests-56%20passed-brightgreen.svg)](#測試)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#表單涵蓋範圍)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -10,6 +14,8 @@
 填入 YAML 設定檔中的研究資料，執行一行指令，即可產生所有必要的 IRB 送審表單 Word 文件 — 簽名後即可送出。
 
 [English README](README.md)
+
+[說明網站](https://u9401066.github.io/irb-in-hurry/)提供 KMUH 契約架構、證據狀態與 Browser MCP 安全邊界的快速導覽。
 
 ---
 
@@ -44,6 +50,7 @@
 - **GitHub Copilot 指引與 setup workflow**：讓 Copilot cloud agent 可直接使用
 - **設定檔驅動的 workflow hooks**：完整約束文件產生與轉檔步驟
 - **Asset Aware MCP 轉檔後端**：可將文件輸出交給自訂命令轉成正確格式
+- **GitHub Pages 說明站**：清楚標示已實作能力、待驗證 KMUH 證據與安全操作方式
 
 ## 表單涵蓋範圍
 
@@ -76,19 +83,114 @@ make setup
 #    （或複製範例設定）
 cp tests/fixtures/sample_retrospective.yml config.yml
 
-# 2.5 KMUH 對齊建議（建議先跑新案，再進修正 / 期中 / 結案）
-#    institution: kmuh
-#    harness:
-#      group_by_phase: true
-#      phases:
-#        - new
-#        - amendment
-#        - continuing
-#        - closure
-
-# 3. 一鍵產生所有文件
+# 3. KFSYSCC 舊流程才可使用一鍵產生；KMUH 使用 organization contract
 make all
+uv run irb-contract show
 ```
+
+### 新契約核心（KMUH 預設）
+
+```bash
+# 驗證並查看內建 KMUH 契約、來源與待取回資產
+uv run irb-contract show
+
+# 依案件類型、審查軌與流程事件列出適用需求及證據就緒狀態
+uv run irb-contract requirements \
+  --submission-type new \
+  --review-track general \
+  --workflow-event submit_new
+
+# 把另一組織提供的 PDF／DOCX／Markdown 編譯成契約草稿與 evidence index
+uv run irb-contract compile \
+  --institution example \
+  --name "Example IRB" \
+  --document /path/to/instructions.pdf \
+  --document /path/to/forms.docx \
+  --output output/contracts/example.yml
+
+# 依內建 KMUH 契約下載一個官方來源，建立不可變快取、evidence manifest
+# 與 organizations/kmuh/contract.yml workspace override
+uv run irb-contract sync-sources \
+  --source kmuh_sop_02_01
+
+# 多次同步既有 override 時，明確允許更新；舊版會先存入 cache snapshot
+uv run irb-contract sync-sources \
+  --contract organizations/kmuh/contract.yml \
+  --form-set kmuh_general_new \
+  --update-output
+
+# 人工檢閱 manifest 的 context/hash 後，把規則綁到確切 span；工具會再次核對
+# 來源 byte SHA-256 與 span ID，然後才把 locator_status 升為 verified
+uv run irb-contract map-evidence \
+  --contract organizations/kmuh/contract.yml \
+  --manifest '.irb-source-cache/kmuh/manifests/<sha256>.json' \
+  --transition administrative_intake \
+  --source kmuh_sop_02_01 \
+  --span 'kmuh:payload:<sha12>:L35' \
+  --update-output
+
+# 需求定義由審閱者明確撰寫；不得把 status 或 evidence_refs 塞進此檔案
+cat > /tmp/kmuh-requirement.yml <<'YAML'
+requirement_id: kmuh_new_submission_checklist
+title: 新案送審文件清單與相應附件
+kind: document
+required: true
+value_type: file
+applies_to:
+  submission_types: [new]
+  review_tracks: [general, expedited]
+  workflow_events: [submit_new]
+YAML
+
+# 將人工定義的需求綁到人工挑選、且重新核對過的官方 evidence spans
+uv run irb-contract map-requirement \
+  --contract organizations/kmuh/contract.yml \
+  --definition /tmp/kmuh-requirement.yml \
+  --manifest '.irb-source-cache/kmuh/manifests/<sha256>.json' \
+  --source kmuh_sop_02_01 \
+  --span 'kmuh:payload:<sha12>:L35' \
+  --replace-requirement \
+  --update-output
+```
+
+編譯器只做可重現的擷取、雜湊與 line/char locator；不會自行猜測送審規則。規則需由人員依 evidence index 審核後加入契約。
+`sync-sources` 只接受契約中宣告的 HTTPS 資產，查詢值會在 manifest 中遮蔽；下載成功仍標為
+`retrieved_needs_rule_mapping`，不等同內容已人工驗證。快取位於被 git 忽略的 `.irb-source-cache/`。
+工作流程規則只有在 `map-evidence` 同時核對契約來源雜湊、manifest 雜湊與 span ID 後，
+才會成為 `locator_status: verified`；工具不會自行猜測應選哪一段。
+需求規則同理由 `map-requirement` 寫入：definition 是人員做出的判斷，工具只驗證所選來源與 locator，
+並保存 definition、manifest、span text 的雜湊。內建 KMUH 契約先列出 9 項候選需求，全部維持
+`needs_evidence`，直到官方檔案實際取回並逐段審核；這些候選項不是已證實的院方規則。
+
+### KMUH eIRB Browser MCP
+
+Browser MCP 不接收帳號或密碼，只會 attach 到人類已登入的專用 Chrome profile。設定方式與安全邊界見
+[`docs/kmuh-browser-mcp.md`](docs/kmuh-browser-mcp.md)。
+
+```bash
+uv run irb-contract browser-status
+uv run irb-contract session-status --site kmuh_eirb
+uv run irb-contract map-page --site kmuh_eirb
+
+# 人工比對 mapping 後，才把 portal_field requirement 綁到一個欄位
+uv run irb-contract bind-requirement-control \
+  --contract organizations/kmuh/contract.yml \
+  --requirement '<portal-field-requirement-id>' \
+  --site kmuh_eirb \
+  --mapping-sha256 '<mapping-sha256>' \
+  --control-id '<control-id>' \
+  --update-output
+```
+
+`map-page` 將 mapping 寫入 git 忽略的 `.irb-web-artifacts/`；保留可操作 selector 與風險類別，
+但不保存欄位值、頁面本文或原始 label。送出、撤案、終止與刪除操作沒有 MCP tool。
+若同時開了多個高醫分頁，先用 MCP 的 `irb_browser_list_pages` 取得 `page_ref`，再在上述
+CLI 加上 `--page-ref c0pN`，可避免選到舊登入頁。
+唯讀按鈕操作也預設關閉；人工檢閱 content-addressed mapping 後，另設
+`IRB_WEB_CLICK_MODE=reviewed` 才能呼叫 `irb_click_reviewed_control`，而且每次仍需對指定
+`control_id` 明確確認。live fingerprint 或風險分類不同就會拒絕執行。
+`bind-requirement-control` 只接受 `portal_field` 與 input/select/textarea；頁面 mapping 的雜湊、
+selector、風險分類及人工審查決策會寫入契約，但原始 label 和欄位值不會寫入。
 
 ## 使用方式
 
@@ -107,14 +209,21 @@ make all
 | `make closure` | 切換至結案審查 + 產生 |
 | `make amendment` | 切換至修正案審查 + 產生 |
 | `make continuing` | 切換至期中審查 + 產生 |
-| `make kmuh-seq` | 套用 KMUH 全流程（新案→修正→期中→結案）+ 產生 |
+| `make kmuh-seq` | 已停用；KMUH 是事件分支流程，不是固定線性序列 |
+| `make contract-show` | 驗證 KMUH 預設契約與來源就緒度 |
+| `make browser-status` | 檢查人類已登入 Chrome 的 CDP bridge |
+| `make session-status` | 檢查目前 KMUH eIRB 頁面的登入狀態 |
+| `make web-mcp` | 啟動 human-login-gated eIRB MCP |
+
+> `make all`、`make kmuh-seq` 與 `scripts/generators` 是 KFSYSCC 舊相容層。
+> 若設定 `institution: kmuh`，程式會明確拒絕沿用 KFSYSCC SF 表單；KMUH 請使用新的 organization contract 流程。
 
 若沒有 `make`，也可以用：
 
 ```bash
 ./bin/irb new
-./bin/irb kmuh-seq
 ./bin/irb report-kmuh
+uv run irb-contract show
 ```
 
 ### 工作流程
@@ -127,8 +236,9 @@ config.yml → generate_all.py → output/<phase>/*.docx → convert.py → outp
 
 若啟用 harness，檔案會輸出到 `output/<phase>/` 子目錄。
 
-KMUH 建議流程順序：
-`新案` → `修正案` → `期中審查` → `結案審查`
+KMUH 流程由事件分支構成：新案可能反覆複審；核准後可各自提出變更、持續審查、
+安全事件／不遵從報告，最後才可能結案、終止或撤案。以 organization contract 的
+`workflow.transitions` 為準，不把它壓成固定線性順序。
 
 1. **編輯 `config.yml`** — 填入研究基本資料（IRB 編號、計畫名稱、主持人、日期、研究類型）
 2. **`make all`** — 產生 DOCX、轉換 PDF、顯示儀表板
@@ -201,7 +311,9 @@ automation:
 make test
 ```
 
-15 項測試涵蓋表單選取邏輯、DOCX 內容驗證、清單產生，以及新案與結案的端對端產生測試。
+56 項測試涵蓋契約驗證、來源雜湊與 locator、人工審核 requirement／portal 欄位綁定、
+安全下載／ZIP 解包、去識別化頁面 mapping、Browser MCP 安全政策，以及舊 KFSYSCC
+表單選取、GitHub Pages 說明站與端對端產生測試。
 
 ## 系統需求
 

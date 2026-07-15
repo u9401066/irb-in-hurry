@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="IRB-in-Hurry：以來源證據為核心的多機構 IRB 契約與人類登入式網站控制 harness。"
+    />
+    <meta name="theme-color" content="#102a43" />
+    <title>IRB-in-Hurry｜證據可追溯的 IRB Harness</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主要內容</a>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="IRB-in-Hurry 首頁">
+        <span class="brand-mark" aria-hidden="true">IRB</span>
+        <span>IRB-in-Hurry</span>
+      </a>
+      <nav aria-label="主要導覽">
+        <a href="#architecture">架構</a>
+        <a href="#kmuh">KMUH</a>
+        <a href="#browser-mcp">Browser MCP</a>
+        <a href="#quickstart">開始使用</a>
+        <a href="https://github.com/u9401066/irb-in-hurry">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-copy">
+          <p class="eyebrow">Citation-ready IRB automation</p>
+          <h1>把院方文件變成<br /><span>可驗證的 IRB 契約</span></h1>
+          <p class="lead">
+            接受不同機構提供的 PDF、DOCX、HTML 或文字指引，保存原始雜湊與精確 locator，
+            再由人員把流程與需求綁到證據。KMUH 是目前的預設契約。
+          </p>
+          <div class="actions">
+            <a class="button primary" href="#quickstart">查看操作流程</a>
+            <a class="button secondary" href="https://github.com/u9401066/irb-in-hurry">檢視原始碼</a>
+          </div>
+        </div>
+        <aside class="status-card" aria-labelledby="readiness-title">
+          <p class="card-kicker">目前就緒度</p>
+          <h2 id="readiness-title">保守、可稽核、不越權</h2>
+          <ul class="status-list">
+            <li><span class="dot ready"></span><strong>契約核心</strong><span>已實作</span></li>
+            <li><span class="dot ready"></span><strong>安全 MCP</strong><span>已實作</span></li>
+            <li><span class="dot pending"></span><strong>KMUH 證據</strong><span>待取回原始 bytes</span></li>
+            <li><span class="dot pending"></span><strong>真實頁面 mapping</strong><span>待 CDP bridge</span></li>
+          </ul>
+          <p class="status-note">尚未驗證的內容會保持 <code>needs_evidence</code>，不冒充正式規則。</p>
+        </aside>
+      </section>
+
+      <section class="metrics" aria-label="KMUH 預設契約摘要">
+        <article><strong>11</strong><span>官方來源宣告</span></article>
+        <article><strong>8</strong><span>表單集合</span></article>
+        <article><strong>16</strong><span>流程事件</span></article>
+        <article><strong>9</strong><span>待取證需求</span></article>
+      </section>
+
+      <section class="section" id="architecture">
+        <div class="section-heading">
+          <p class="eyebrow">Architecture</p>
+          <h2>證據先行，而不是把既有表單硬套到另一家醫院</h2>
+          <p>每一層都保留清楚的責任邊界；傳輸成功不等於規則已驗證。</p>
+        </div>
+        <div class="flow" role="list" aria-label="契約產生流程">
+          <article role="listitem">
+            <span>01</span>
+            <h3>來源擷取</h3>
+            <p>保存來源 URI、原始 byte SHA-256、文字 SHA-256 與不可變快取。</p>
+          </article>
+          <article role="listitem">
+            <span>02</span>
+            <h3>精確定位</h3>
+            <p>產生穩定 span ID，以及 line、char、byte locator 與短 context。</p>
+          </article>
+          <article role="listitem">
+            <span>03</span>
+            <h3>人工審核</h3>
+            <p>人員選取證據並定義流程或需求；工具重新核對所有雜湊。</p>
+          </article>
+          <article role="listitem">
+            <span>04</span>
+            <h3>Adapter 執行</h3>
+            <p>文件與網站 adapter 只消費已審核契約，危險動作維持人工控制。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section split" id="kmuh">
+        <div>
+          <p class="eyebrow">KMUH default</p>
+          <h2>高醫流程是事件分支，不是固定線性序列</h2>
+          <p>
+            新案可能反覆補件與複審；核准後可分別提出變更、持續審查、安全事件或不遵從通報，
+            最後才可能結案、終止或撤案。舊有 KFSYSCC SF 表單仍保留在相容層，但不會被冒名當作 KMUH 表單。
+          </p>
+        </div>
+        <div class="panel">
+          <h3>目前的證據狀態</h3>
+          <p>
+            契約先宣告 SOP、表單集合、流程與候選需求。官方文件尚未成功取回以前，
+            locator 保持 <code>needs_retrieval</code>；取回後也只會先升為 <code>needs_mapping</code>。
+          </p>
+          <a href="https://github.com/u9401066/irb-in-hurry/blob/main/src/irb_harness/contracts/kmuh.yml">檢視 KMUH 契約 →</a>
+        </div>
+      </section>
+
+      <section class="section" id="browser-mcp">
+        <div class="section-heading">
+          <p class="eyebrow">Human-login-gated browser MCP</p>
+          <h2>登入交給人，頁面 mapping 才交給工具</h2>
+        </div>
+        <div class="safety-grid">
+          <article>
+            <h3>不接觸密碼</h3>
+            <p>MCP 只 attach 到人類已登入的專用 Chrome profile，不接收或保存 KMUH 帳密。</p>
+          </article>
+          <article>
+            <h3>不保存案件內容</h3>
+            <p>頁面 mapping 保存 selector、雜湊識別與風險分類，不保存欄位值、本文或原始 label。</p>
+          </article>
+          <article>
+            <h3>沒有送出工具</h3>
+            <p>submit、核准、撤案、終止及刪除不在 MCP surface；草稿寫入另有雙重開關。</p>
+          </article>
+          <article>
+            <h3>拒絕 stale mapping</h3>
+            <p>live fingerprint、control ID 或風險分類不同時立即拒絕，要求重新人工檢閱。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section quickstart" id="quickstart">
+        <div class="section-heading">
+          <p class="eyebrow">Quick start</p>
+          <h2>先看就緒度，再取回來源與映射證據</h2>
+        </div>
+        <div class="code-block" aria-label="快速開始指令">
+          <div class="code-title"><span></span><span></span><span></span><strong>terminal</strong></div>
+          <pre><code>uv sync --group dev
+uv run irb-contract show
+uv run irb-contract requirements \
+  --submission-type new \
+  --review-track general \
+  --workflow-event submit_new
+
+# Chrome bridge 只檢查人類已登入的既有 session
+uv run irb-contract browser-status</code></pre>
+        </div>
+        <p class="fine-print">
+          詳細指令、安全界線與 reverse SSH 設定請見
+          <a href="https://github.com/u9401066/irb-in-hurry/blob/main/README.zh-TW.md">繁體中文 README</a>
+          與
+          <a href="https://github.com/u9401066/irb-in-hurry/blob/main/docs/kmuh-browser-mcp.md">KMUH Browser MCP 指南</a>。
+        </p>
+      </section>
+    </main>
+
+    <footer>
+      <p><strong>IRB-in-Hurry</strong> 不繞過倫理審查，也不自動核准任何研究。</p>
+      <p>MIT License · <a href="https://github.com/u9401066/irb-in-hurry">GitHub</a></p>
+    </footer>
+  </body>
+</html>
