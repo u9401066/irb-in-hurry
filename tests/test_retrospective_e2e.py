@@ -1,6 +1,5 @@
 """End-to-end test: retrospective study → generate all forms → validate output."""
 import pytest
-import yaml
 import os
 import sys
 

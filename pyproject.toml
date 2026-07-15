@@ -1,16 +1,38 @@
 [project]
 name = "irb-in-hurry"
 version = "1.0.0"
-description = "Automated KFSYSCC IRB document preparation — 43 forms, 11 categories, one command"
+description = "Organization-aware, citation-ready IRB document and browser harness"
 requires-python = ">=3.10"
 dependencies = [
+    "mcp>=1.27,<2",
+    "playwright>=1.51,<2",
+    "pypdf>=5,<7",
     "python-docx",
     "pyyaml",
     "pdf2image",
     "pillow",
 ]
 
+[project.scripts]
+irb-contract = "irb_harness.presentation.cli:main"
+irb-web-mcp = "irb_harness.presentation.mcp_server:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"irb_harness.contracts" = ["*.yml"]
+
 [dependency-groups]
 dev = [
+    "mypy",
     "pytest",
+    "ruff",
 ]

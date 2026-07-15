@@ -75,6 +75,20 @@ def test_unknown_phase_raises():
         select_forms(config)
 
 
+def test_kmuh_never_reuses_kfsyscc_sf_rules(retro_config):
+    retro_config["institution"] = "kmuh"
+
+    with pytest.raises(ValueError, match="not supported by the legacy SF generator"):
+        select_forms(retro_config)
+
+
+def test_unknown_institution_raises(retro_config):
+    retro_config["institution"] = "not-a-real-irb"
+
+    with pytest.raises(ValueError, match="Unknown institution"):
+        select_forms(retro_config)
+
+
 def test_all_phases_return_forms(retro_config):
     for phase in ["new", "amendment", "continuing", "closure", "suspension", "appeal"]:
         retro_config["phase"] = phase

@@ -58,8 +58,8 @@ usage() {
   cat <<'EOF'
 Usage:
   ./bin/irb new           # Set single-phase new and run generate + convert + dashboard
-  ./bin/irb kmuh-seq       # Set KMUH pipeline: new -> amendment -> continuing -> closure
-  ./bin/irb report-kmuh    # Show phase-by-phase coverage report
+  ./bin/irb kmuh-seq       # Deprecated; exits without modifying config.yml
+  ./bin/irb report-kmuh    # Show KMUH contract provenance/readiness
   ./bin/irb <make target>  # Fallback: try `make <target>` when make exists
 EOF
 }
@@ -73,8 +73,9 @@ case "${1:-}" in
     run_all
     ;;
   kmuh-seq)
-    set_phase_config "new" '["new", "amendment", "continuing", "closure"]'
-    run_all
+    echo "❌ KMUH is event-driven; the old linear sequence is disabled."
+    echo "Run: uv run irb-contract show"
+    exit 2
     ;;
   report-kmuh)
     run_python scripts/report_kmuh.py "$CONFIG"

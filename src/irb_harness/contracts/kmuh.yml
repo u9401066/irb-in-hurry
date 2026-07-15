@@ -1,0 +1,491 @@
+schema_version: "1.0"
+contract_id: kmuh-irb
+status: active_with_unretrieved_assets
+organization:
+  id: kmuh
+  name: 高雄醫學大學附設中和紀念醫院人體試驗審查委員會
+  default_locale: zh-TW
+
+source_documents:
+  - source_id: kmuh_irb_downloads
+    title: KMUH 計畫案送審文件下載處
+    uri: https://www.kmuh.org.tw/web/kmuhdept/9923/%E8%A8%88%E7%95%AB%E6%A1%88%E9%80%81%E5%AF%A9%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BC%89.aspx
+    media_type: text/html
+    revision: live
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_index
+    title: KMUH 人體試驗審查委員會標準作業程序索引
+    uri: https://www.kmuh.org.tw/web/kmuhdept/9923/%E6%A8%99%E6%BA%96%E4%BD%9C%E6%A5%AD%E7%A8%8B%E5%BA%8F.aspx
+    media_type: text/html
+    revision: live
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_02_01
+    title: KMUH/IRB/SOP/02.01 計畫書送審之管理
+    uri: https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/SOP/%E7%AC%AC2025.00%E7%89%88/SOP%2002%2001%E8%A8%88%E7%95%AB%E6%9B%B8%E9%80%81%E5%AF%A9%E4%B9%8B%E7%AE%A1%E7%90%86-2025%2000-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf?ver=2025-05-23-142302-683
+    media_type: application/pdf
+    revision: "2025.00"
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_02_03
+    title: KMUH/IRB/SOP/02.03 一般審查及簡易審查作業程序
+    uri: https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/SOP/%E7%AC%AC2025.00%E7%89%88/SOP%2002.03%E4%B8%80%E8%88%AC%E5%AF%A9%E6%9F%A5%E5%8F%8A%E7%B0%A1%E6%98%93%E5%AF%A9%E6%9F%A5%E4%BD%9C%E6%A5%AD%E7%A8%8B%E5%BA%8F-2025%2000-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf?ver=2025-05-23-142303-137
+    media_type: application/pdf
+    revision: "2025.00"
+    effective_date: "2025-05"
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_02_05
+    title: KMUH/IRB/SOP/02.05 免審案之認定及受試者保護
+    uri: https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/SOP/%E7%AC%AC2025.00%E7%89%88/SOP%2002.05%E5%85%8D%E5%AF%A9%E6%A1%88%E4%B9%8B%E8%AA%8D%E5%AE%9A%E5%8F%8A%E5%8F%97%E8%A9%A6%E8%80%85%E4%BF%9D%E8%AD%B7-2025.00-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf?ver=2025-05-23-142303-200
+    media_type: application/pdf
+    revision: "2025.00"
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_02_07
+    title: KMUH/IRB/SOP/02.07 複審案審查作業程序
+    uri: https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/SOP/%E7%AC%AC2025.00%E7%89%88/SOP%2002.07%E8%A4%87%E5%AF%A9%E6%A1%88%E5%AF%A9%E6%9F%A5%E4%BD%9C%E6%A5%AD%E7%A8%8B%E5%BA%8F-2025.00-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf?ver=2025-05-23-142303-230
+    media_type: application/pdf
+    revision: "2025.00"
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_02_08
+    title: KMUH/IRB/SOP/02.08 持續審查作業程序
+    uri: https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/SOP/%E7%AC%AC2025.00%E7%89%88/SOP%2002.08%E6%8C%81%E7%BA%8C%E5%AF%A9%E6%9F%A5%E4%BD%9C%E6%A5%AD%E7%A8%8B%E5%BA%8F-2025.00-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf?ver=2025-05-23-142303-543
+    media_type: application/pdf
+    revision: "2025.00"
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_02_09
+    title: KMUH/IRB/SOP/02.09 變更案作業程序
+    uri: https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/SOP/%E7%AC%AC2025.00%E7%89%88/SOP%2002.09%E8%AE%8A%E6%9B%B4%E6%A1%88%E4%BD%9C%E6%A5%AD%E7%A8%8B%E5%BA%8F-2025.00-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf?ver=2025-05-23-142303-527
+    media_type: application/pdf
+    revision: "2025.00"
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_02_10
+    title: KMUH/IRB/SOP/02.10 中止終止結案與撤案之處理準則
+    uri: https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/SOP/%E7%AC%AC2025.00%E7%89%88/SOP%2002.10%E4%B8%AD%E6%AD%A2%E7%B5%82%E6%AD%A2%E7%B5%90%E6%A1%88%E8%88%87%E6%92%A4%E6%A1%88%E4%B9%8B%E8%99%95%E7%90%86%E6%BA%96%E5%89%87-2025.00-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf?ver=2025-05-23-142303-557
+    media_type: application/pdf
+    revision: "2025.00"
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_03_03
+    title: KMUH/IRB/SOP/03.03 嚴重不良事件及未預期問題之監測與通報
+    uri: https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/SOP/%E7%AC%AC2025.00%E7%89%88/SOP%2003.03%E5%9A%B4%E9%87%8D%E4%B8%8D%E8%89%AF%E4%BA%8B%E4%BB%B6%E5%8F%8A%E6%9C%AA%E9%A0%90%E6%9C%9F%E5%95%8F%E9%A1%8C%E4%B9%8B%E7%9B%A3%E6%B8%AC%E8%88%87%E9%80%9A%E5%A0%B1-2025.00-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf?ver=2025-05-23-142303-620
+    media_type: application/pdf
+    revision: "2025.00"
+    evidence_status: needs_retrieval
+  - source_id: kmuh_sop_03_04
+    title: KMUH/IRB/SOP/03.04 不遵從（含試驗偏差及違規）事件通報及處置
+    uri: https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/SOP/%E7%AC%AC2025.00%E7%89%88/SOP%2003.04%E4%B8%8D%E9%81%B5%E5%BE%9E%28%E5%90%AB%E8%A9%A6%E9%A9%97%E5%81%8F%E5%B7%AE%E5%8F%8A%E9%81%95%E8%A6%8F%29%E4%BA%8B%E4%BB%B6%E9%80%9A%E5%A0%B1%E5%8F%8A%E8%99%95%E7%BD%AE-2025.00-%E4%B8%8A%E7%B6%B2%E7%89%88.pdf?ver=2025-05-23-142303-997
+    media_type: application/pdf
+    revision: "2025.00"
+    evidence_status: needs_retrieval
+
+workflow:
+  states:
+    - draft
+    - submitted
+    - admin_check
+    - under_review
+    - revision_required
+    - approved
+    - active
+    - suspended
+    - terminated
+    - closed
+    - withdrawn
+  transitions:
+    - event: submit_new
+      from: draft
+      to: submitted
+      action_risk: submit
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_01
+          locator_status: needs_retrieval
+          locator_hint: "4.2.1.1"
+        - source_document_id: kmuh_sop_02_03
+          locator_status: needs_retrieval
+          locator_hint: "4.3.1"
+        - source_document_id: kmuh_sop_02_05
+          locator_status: needs_retrieval
+          locator_hint: "免審案申請程序"
+    - event: administrative_intake
+      from: submitted
+      to: admin_check
+      action_risk: read
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_01
+          locator_status: needs_retrieval
+          locator_hint: "4.3.2"
+    - event: send_to_review
+      from: admin_check
+      to: under_review
+      action_risk: read
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_03
+          locator_status: needs_retrieval
+          locator_hint: "4.3.5.4"
+    - event: request_revision
+      from: under_review
+      to: revision_required
+      action_risk: read
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_03
+          locator_status: needs_retrieval
+          locator_hint: "4.4.3.2"
+    - event: resubmit_revision
+      from: revision_required
+      to: under_review
+      repeatable: true
+      action_risk: submit
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_07
+          locator_status: needs_retrieval
+          locator_hint: "複審案申請與審查程序"
+    - event: approve
+      from: under_review
+      to: approved
+      action_risk: read
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_03
+          locator_status: needs_retrieval
+          locator_hint: "4.4.3.2"
+    - event: activate
+      from: approved
+      to: active
+      action_risk: read
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_03
+          locator_status: needs_retrieval
+          locator_hint: "1.2"
+    - event: submit_amendment
+      from: active
+      to: active
+      repeatable: true
+      action_risk: submit
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_09
+          locator_status: needs_retrieval
+          locator_hint: "變更案申請程序"
+    - event: submit_continuing_review
+      from: active
+      to: active
+      repeatable: true
+      action_risk: submit
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_08
+          locator_status: needs_retrieval
+          locator_hint: "4.3.2"
+    - event: report_safety_event
+      from: active
+      to: active
+      repeatable: true
+      action_risk: submit
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_03_03
+          locator_status: needs_retrieval
+          locator_hint: "監測與通報程序"
+    - event: report_non_compliance
+      from: active
+      to: active
+      repeatable: true
+      action_risk: submit
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_03_04
+          locator_status: needs_retrieval
+          locator_hint: "事件通報及處置程序"
+    - event: suspend
+      from: active
+      to: suspended
+      action_risk: submit
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_10
+          locator_status: needs_retrieval
+          locator_hint: "中止／暫停處理程序"
+    - event: resume
+      from: suspended
+      to: active
+      action_risk: submit
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_10
+          locator_status: needs_retrieval
+          locator_hint: "暫停後續處理程序"
+    - event: terminate
+      from:
+        - active
+        - suspended
+      to: terminated
+      action_risk: destructive
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_10
+          locator_status: needs_retrieval
+          locator_hint: "提前終止處理程序"
+    - event: close
+      from:
+        - active
+        - terminated
+      to: closed
+      action_risk: submit
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_10
+          locator_status: needs_retrieval
+          locator_hint: "結案處理程序"
+    - event: withdraw
+      from:
+        - draft
+        - submitted
+        - admin_check
+        - under_review
+        - revision_required
+      to: withdrawn
+      action_risk: destructive
+      human_confirmation: true
+      evidence_refs:
+        - source_document_id: kmuh_sop_02_10
+          locator_status: needs_retrieval
+          locator_hint: "撤案處理程序"
+
+requirements:
+  - requirement_id: kmuh_new_online_application
+    title: 於線上審查系統填寫新案申請書
+    kind: manual_step
+    status: needs_evidence
+    required: true
+    applies_to:
+      submission_types: [new]
+      review_tracks: [general, expedited, exempt]
+      workflow_events: [submit_new]
+    evidence_refs:
+      - source_document_id: kmuh_sop_02_03
+        locator_status: needs_retrieval
+        locator_hint: "4.3.1"
+  - requirement_id: kmuh_new_submission_checklist
+    title: 新案送審文件清單與相應附件
+    kind: document
+    status: needs_evidence
+    required: true
+    value_type: file
+    applies_to:
+      submission_types: [new]
+      review_tracks: [general, expedited]
+      workflow_events: [submit_new]
+    evidence_refs:
+      - source_document_id: kmuh_sop_02_01
+        locator_status: needs_retrieval
+        locator_hint: "6.1、6.2"
+      - source_document_id: kmuh_sop_02_03
+        locator_status: needs_retrieval
+        locator_hint: "4.3.6、4.3.6.1"
+  - requirement_id: kmuh_exempt_submission_checklist
+    title: 免審新案送審文件清單與相應附件
+    kind: document
+    status: needs_evidence
+    required: true
+    value_type: file
+    applies_to:
+      submission_types: [new]
+      review_tracks: [exempt]
+      workflow_events: [submit_new]
+    evidence_refs:
+      - source_document_id: kmuh_sop_02_01
+        locator_status: needs_retrieval
+        locator_hint: "6.3"
+      - source_document_id: kmuh_sop_02_05
+        locator_status: needs_retrieval
+        locator_hint: "免審案申請程序"
+  - requirement_id: kmuh_amendment_submission_package
+    title: 變更案送審文件封包
+    kind: document
+    status: needs_evidence
+    required: true
+    value_type: file
+    applies_to:
+      submission_types: [amendment]
+      review_tracks: [general, expedited]
+      workflow_events: [submit_amendment]
+    evidence_refs:
+      - source_document_id: kmuh_sop_02_09
+        locator_status: needs_retrieval
+        locator_hint: "變更案申請程序"
+  - requirement_id: kmuh_continuing_review_report
+    title: 持續審查報告與送審文件
+    kind: document
+    status: needs_evidence
+    required: true
+    value_type: file
+    applies_to:
+      submission_types: [continuing_review]
+      review_tracks: [general, expedited]
+      workflow_events: [submit_continuing_review]
+    evidence_refs:
+      - source_document_id: kmuh_sop_02_08
+        locator_status: needs_retrieval
+        locator_hint: "4.3.2、6.1～6.3"
+  - requirement_id: kmuh_safety_event_report
+    title: 嚴重不良事件或未預期問題通報
+    kind: document
+    status: needs_evidence
+    required: true
+    value_type: file
+    applies_to:
+      submission_types: [safety_event]
+      review_tracks: [general, expedited]
+      workflow_events: [report_safety_event]
+    evidence_refs:
+      - source_document_id: kmuh_sop_03_03
+        locator_status: needs_retrieval
+        locator_hint: "監測與通報程序"
+  - requirement_id: kmuh_non_compliance_report
+    title: 不遵從、試驗偏差或違規事件通報
+    kind: document
+    status: needs_evidence
+    required: true
+    value_type: file
+    applies_to:
+      submission_types: [non_compliance]
+      review_tracks: [general, expedited]
+      workflow_events: [report_non_compliance]
+    evidence_refs:
+      - source_document_id: kmuh_sop_03_04
+        locator_status: needs_retrieval
+        locator_hint: "事件通報及處置程序"
+  - requirement_id: kmuh_closure_termination_report
+    title: 結案或終止報告送審文件
+    kind: document
+    status: needs_evidence
+    required: true
+    value_type: file
+    applies_to:
+      submission_types: [closure_or_termination]
+      review_tracks: [general, expedited]
+      workflow_events: [close, terminate]
+    evidence_refs:
+      - source_document_id: kmuh_sop_02_10
+        locator_status: needs_retrieval
+        locator_hint: "結案／終止處理程序"
+  - requirement_id: kmuh_withdrawal_request
+    title: 撤案申請與說明文件
+    kind: document
+    status: needs_evidence
+    required: true
+    value_type: file
+    applies_to:
+      submission_types: [withdrawal]
+      review_tracks: [general, expedited, exempt]
+      workflow_events: [withdraw]
+    evidence_refs:
+      - source_document_id: kmuh_sop_02_10
+        locator_status: needs_retrieval
+        locator_hint: "撤案處理程序"
+
+form_sets:
+  - form_set_id: kmuh_general_new
+    title: 一般審查計畫案－新案文件封包
+    submission_type: new
+    review_tracks: [general]
+    source_document_id: kmuh_irb_downloads
+    source_uri: "https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/%E9%80%81%E5%AF%A9%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BC%89/%E4%B8%80%E8%88%AC%E6%A1%88/%E4%B8%80%E8%88%AC%E6%A1%88-%E6%96%B0%E6%A1%882025.00%20%2820250520%29_20260128R.zip?ver=2026-01-29-140538-363"
+    version: "2025.00"
+    published_date: "2025-05-21"
+    evidence_status: needs_retrieval
+  - form_set_id: kmuh_expedited_new
+    title: 簡易審查計畫案－新案文件封包
+    submission_type: new
+    review_tracks: [expedited]
+    source_document_id: kmuh_irb_downloads
+    source_uri: "https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/%E9%80%81%E5%AF%A9%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BC%89/%E7%B0%A1%E5%AF%A9/%E7%B0%A1%E5%AF%A9-%E6%96%B0%E6%A1%882025.00%20%2820250520%29_20260128R.zip?ver=2026-01-29-140703-597"
+    version: "2025.00"
+    published_date: "2025-05-21"
+    evidence_status: needs_retrieval
+  - form_set_id: kmuh_exempt_new
+    title: 免予審查計畫案－新案文件封包
+    submission_type: new
+    review_tracks: [exempt]
+    source_document_id: kmuh_irb_downloads
+    source_uri: "https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/%E9%80%81%E5%AF%A9%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BC%89/%E5%85%8D%E5%AF%A9/%E5%85%8D%E5%AF%A9-%E6%96%B0%E6%A1%882025.00%20%282%29.zip?ver=2026-01-29-140630-567"
+    version: "2025.00"
+    published_date: "2025-05-21"
+    evidence_status: needs_retrieval
+  - form_set_id: kmuh_general_amendment
+    title: 一般審查計畫案－變更案文件封包
+    submission_type: amendment
+    review_tracks: [general]
+    source_document_id: kmuh_irb_downloads
+    source_uri: "https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/%E9%80%81%E5%AF%A9%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BC%89/%E4%B8%80%E8%88%AC%E6%A1%88/%E8%AE%8A%E6%9B%B4%E6%A1%882025.00%20%2820251219%29.zip?ver=2026-04-09-152417-703"
+    version: "2025.00"
+    published_date: "2025-12-19"
+    evidence_status: needs_retrieval
+  - form_set_id: kmuh_expedited_amendment
+    title: 簡易審查計畫案－變更案文件封包
+    submission_type: amendment
+    review_tracks: [expedited]
+    source_document_id: kmuh_irb_downloads
+    source_uri: "https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/%E9%80%81%E5%AF%A9%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BC%89/%E7%B0%A1%E5%AF%A9/%E8%AE%8A%E6%9B%B4%E6%A1%882025.00%20%2820251219%29.zip?ver=2026-04-09-152504-767"
+    version: "2025.00"
+    published_date: "2025-12-19"
+    evidence_status: needs_retrieval
+  - form_set_id: kmuh_general_continuing
+    title: 一般審查計畫案－持續審查文件封包
+    submission_type: continuing_review
+    review_tracks: [general]
+    source_document_id: kmuh_irb_downloads
+    source_uri: "https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/%E9%80%81%E5%AF%A9%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BC%89/%E4%B8%80%E8%88%AC%E6%A1%88/%E6%8C%81%E7%BA%8C%E5%AF%A9%E6%9F%A52025.00%20%2820250520%29.zip?ver=2025-05-21-135128-137"
+    version: "2025.00"
+    published_date: "2025-05-21"
+    evidence_status: needs_retrieval
+  - form_set_id: kmuh_expedited_continuing
+    title: 簡易審查計畫案－持續審查文件封包
+    submission_type: continuing_review
+    review_tracks: [expedited]
+    source_document_id: kmuh_irb_downloads
+    source_uri: "https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/%E9%80%81%E5%AF%A9%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BC%89/%E7%B0%A1%E5%AF%A9/%E6%8C%81%E7%BA%8C%E5%AF%A9%E6%9F%A52025.00%20%2820250520%29.zip"
+    version: "2025.00"
+    published_date: "2025-05-21"
+    evidence_status: needs_retrieval
+  - form_set_id: kmuh_closure_termination
+    title: 結案／終止報告文件封包
+    submission_type: closure_or_termination
+    review_tracks: [general, expedited]
+    source_document_id: kmuh_irb_downloads
+    source_uri: "https://www.kmuh.org.tw/web/kmuhdept/Portals/9923/%E9%80%81%E5%AF%A9%E6%96%87%E4%BB%B6%E4%B8%8B%E8%BC%89/%E4%B8%80%E8%88%AC%E6%A1%88/%E7%B5%90%E6%A1%88%E7%B5%82%E6%AD%A22025.00%2820250805%29.zip?ver=2025-08-14-163722-527"
+    version: "2025.00"
+    published_date: "2025-05-21"
+    evidence_status: needs_retrieval
+
+websites:
+  - site_id: kmuh_ctc_directory
+    title: 高醫臨床試驗中心 IRB 計畫送審導引
+    start_url: https://ctc.kmuh.org.tw/trial_page?id=8&lang=cht
+    allowed_hosts:
+      - ctc.kmuh.org.tw
+    login:
+      mode: public
+      unauthenticated_selectors: []
+      authenticated_selectors: []
+    action_policy:
+      read_actions: disabled
+      draft_writes: disabled
+      submissions: human_only
+  - site_id: kmuh_eirb
+    title: KMUH 人體試驗審查委員會申請暨審查管理系統
+    start_url: https://erec.kmuh.org.tw/RECManageSystem/Home/Index
+    allowed_hosts:
+      - erec.kmuh.org.tw
+    login:
+      mode: human
+      unauthenticated_selectors:
+        - "#loginForm"
+        - "#inputUserID"
+        - "#inputPassword"
+      authenticated_selectors:
+        - "a[href*='Account/Logout']"
+        - "form[action*='Account/Logout']"
+        - "a[href*='Home/Index']"
+    action_policy:
+      read_actions: explicit_confirmation
+      draft_writes: explicit_confirmation
+      submissions: human_only

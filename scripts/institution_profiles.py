@@ -85,10 +85,18 @@ def normalize_institution_id(institution):
     """Normalize institution config value into a known institution id."""
     if isinstance(institution, str):
         normalized = institution.strip().lower()
-        return normalized if normalized in INSTITUTION_PROFILES else DEFAULT_INSTITUTION_ID
+        if normalized not in INSTITUTION_PROFILES:
+            raise ValueError(
+                f"Unknown institution: {institution}. Valid: {sorted(INSTITUTION_PROFILES)}"
+            )
+        return normalized
     if isinstance(institution, dict):
+        if "institution" in institution:
+            return normalize_institution_id(institution["institution"])
         return normalize_institution_id(institution.get("id") or institution.get("name"))
-    return DEFAULT_INSTITUTION_ID
+    if institution is None:
+        return DEFAULT_INSTITUTION_ID
+    raise ValueError("institution must be a string, mapping, or null")
 
 
 def get_institution_profile(config=None):
