@@ -17,12 +17,14 @@ Last updated: 2026-07-15
 - [x] Fail closed when the legacy KFSYSCC generator is asked to produce KMUH
   forms.
 - [x] Add a GitHub Pages documentation site and deployment workflow.
+- [x] Push `agent/kmuh-irb-harness`, open draft PR #2, and enable workflow-based
+  GitHub Pages for the repository.
 
 ## Doing
 
 - [ ] Establish the desktop-Chrome reverse SSH bridge on port 9222.
-- [ ] Split the implementation into scoped commits, push the feature branch, and
-  open a draft pull request.
+- [ ] Review and merge draft PR #2 so the first Pages deployment can run from
+  `main`.
 
 ## Next
 

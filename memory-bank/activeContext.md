@@ -20,8 +20,11 @@ Refactor the fork into a multi-organization, citation-ready IRB harness:
   conservative requirements that remain `needs_evidence`.
 - The Browser MCP exposes discovery and gated draft/read operations, with no
   submit, approval, withdrawal, termination, or delete tool.
-- A dependency-free GitHub Pages site and deployment workflow are being added on
-  `agent/kmuh-irb-harness`.
+- The dependency-free GitHub Pages site is committed and Pages is configured for
+  workflow deployment at `https://u9401066.github.io/irb-in-hurry/`; first
+  deployment waits for PR #2 to merge to `main`.
+- Branch `agent/kmuh-irb-harness` is pushed with segmented commits and draft PR
+  `https://github.com/u9401066/irb-in-hurry/pull/2` is open.
 
 ## Current Blockers
 
