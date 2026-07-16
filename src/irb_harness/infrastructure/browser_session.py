@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import ipaddress
+import json
 import os
 import socket
 from typing import Any, Mapping
@@ -28,6 +29,14 @@ class BrowserUnavailable(RuntimeError):
 
 class HumanLoginRequired(RuntimeError):
     """Raised when an attached page is present but not authenticated."""
+
+
+class _CDPMetadataError(ValueError):
+    """Internal, sanitized reason for rejecting Chrome discovery metadata."""
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
 
 
 class BrowserController:
@@ -62,17 +71,19 @@ class BrowserController:
 
         tcp_reachable = _tcp_reachable(host, port)
         result["tcp_reachable"] = tcp_reachable
-        version_url = f"{self.endpoint.rstrip('/')}/json/version"
         try:
-            with urlopen(version_url, timeout=2) as response:  # noqa: S310 - validated loopback CDP endpoint
-                available = response.status == 200
-                reason = None if available else f"http_status_{response.status}"
+            _fetch_cdp_websocket_url(self.endpoint, host=host, port=port)
+            available = True
+            reason = None
         except HTTPError as exc:
             available = False
             reason = f"http_status_{exc.code}"
         except URLError as exc:
             available = False
             reason = _connection_reason(exc.reason)
+        except _CDPMetadataError as exc:
+            available = False
+            reason = exc.reason
         except (OSError, ValueError) as exc:
             available = False
             reason = _connection_reason(exc)
@@ -80,12 +91,29 @@ class BrowserController:
         result["cdp_metadata_reachable"] = available
         if available:
             result["tcp_reachable"] = True
-        elif tcp_reachable and not str(reason).startswith("http_status_"):
+        elif tcp_reachable and reason in {
+            "connection_refused",
+            "connection_timed_out",
+            "connection_failed",
+            "timeouterror",
+        }:
             reason = "cdp_metadata_unavailable"
         if reason:
             result["reason"] = reason
         if not available:
-            if tcp_reachable:
+            if reason == "invalid_cdp_metadata":
+                result["instruction"] = (
+                    "The reverse-forward target returned HTTP, but it is not valid "
+                    "Chrome CDP metadata. Ensure port 9222 belongs to the dedicated "
+                    "Chrome profile, then rerun browser-status."
+                )
+            elif reason == "unsafe_cdp_websocket":
+                result["instruction"] = (
+                    "Chrome advertised a non-loopback or mismatched CDP WebSocket. "
+                    "Bind the dedicated profile to 127.0.0.1:9222 and keep the SSH "
+                    "reverse forward on loopback."
+                )
+            elif tcp_reachable:
                 result["instruction"] = (
                     "The reverse-forward listener is reachable, but Chrome CDP "
                     "metadata is unavailable on the SSH client. Start the dedicated "
@@ -102,17 +130,22 @@ class BrowserController:
         if self._browser is not None and self._browser.is_connected():
             return self._browser
         try:
-            _validated_cdp_endpoint(self.endpoint)
+            host, port = _validated_cdp_endpoint(self.endpoint)
         except ValueError as exc:
             raise BrowserUnavailable(
                 "CDP endpoint must be an HTTP loopback origin without credentials"
             ) from exc
         try:
+            websocket_url = _fetch_cdp_websocket_url(
+                self.endpoint,
+                host=host,
+                port=port,
+            )
             from playwright.async_api import async_playwright
 
             self._playwright = await async_playwright().start()
             self._browser = await self._playwright.chromium.connect_over_cdp(
-                self.endpoint,
+                websocket_url,
                 timeout=5000,
             )
         except Exception as exc:
@@ -577,6 +610,80 @@ def _tcp_reachable(host: str, port: int) -> bool:
             return True
     except OSError:
         return False
+
+
+def _fetch_cdp_websocket_url(endpoint: str, *, host: str, port: int) -> str:
+    """Read bounded Chrome metadata and return only a validated loopback WS URL."""
+    version_url = f"{endpoint.rstrip('/')}/json/version"
+    try:
+        with urlopen(version_url, timeout=2) as response:  # noqa: S310 - validated loopback CDP endpoint
+            status = getattr(response, "status", 200)
+            if status != 200:
+                raise _CDPMetadataError(f"http_status_{status}")
+            payload = response.read(65_537)
+    except _CDPMetadataError:
+        raise
+    if len(payload) > 65_536:
+        raise _CDPMetadataError("invalid_cdp_metadata")
+    try:
+        metadata = json.loads(payload)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise _CDPMetadataError("invalid_cdp_metadata") from exc
+    if not isinstance(metadata, Mapping):
+        raise _CDPMetadataError("invalid_cdp_metadata")
+    browser = metadata.get("Browser")
+    websocket_url = metadata.get("webSocketDebuggerUrl")
+    if (
+        not isinstance(browser, str)
+        or not browser.strip()
+        or not isinstance(websocket_url, str)
+        or not websocket_url
+    ):
+        raise _CDPMetadataError("invalid_cdp_metadata")
+    _validate_cdp_websocket_url(websocket_url, endpoint_host=host, endpoint_port=port)
+    return websocket_url
+
+
+def _validate_cdp_websocket_url(
+    websocket_url: str, *, endpoint_host: str, endpoint_port: int
+) -> None:
+    """Reject discovery metadata that could pivot attachment off loopback."""
+    try:
+        parsed = urlparse(websocket_url)
+        websocket_port = parsed.port or 80
+    except ValueError as exc:
+        raise _CDPMetadataError("unsafe_cdp_websocket") from exc
+    if (
+        parsed.scheme != "ws"
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.params
+        or parsed.query
+        or parsed.fragment
+        or not parsed.path.startswith("/devtools/browser/")
+        or websocket_port != endpoint_port
+    ):
+        raise _CDPMetadataError("unsafe_cdp_websocket")
+    websocket_host = parsed.hostname.lower()
+    if not _is_loopback_host(websocket_host) or not _loopback_hosts_compatible(
+        endpoint_host, websocket_host
+    ):
+        raise _CDPMetadataError("unsafe_cdp_websocket")
+
+
+def _is_loopback_host(host: str) -> bool:
+    if host == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def _loopback_hosts_compatible(left: str, right: str) -> bool:
+    """Treat localhost and any numeric loopback as the same local trust boundary."""
+    return _is_loopback_host(left) and _is_loopback_host(right)
 
 
 def _reviewed_control(mapping: Mapping[str, Any], control_id: str) -> Mapping[str, Any]:

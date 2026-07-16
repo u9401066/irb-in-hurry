@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import io
+import json
 from urllib.error import URLError
 
 import pytest
@@ -156,6 +158,18 @@ class _Browser:
         self.contexts = [_Context(pages)]
 
 
+class _MetadataResponse(io.BytesIO):
+    def __init__(self, payload: bytes, *, status: int = 200) -> None:
+        super().__init__(payload)
+        self.status = status
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        self.close()
+
+
 def test_bridge_status_distinguishes_reverse_listener_from_missing_chrome(
     monkeypatch,
 ):
@@ -175,6 +189,78 @@ def test_bridge_status_distinguishes_reverse_listener_from_missing_chrome(
     assert status["cdp_metadata_reachable"] is False
     assert status["reason"] == "cdp_metadata_unavailable"
     assert "Chrome CDP metadata is unavailable" in status["instruction"]
+
+
+def test_bridge_status_requires_valid_bounded_loopback_chrome_metadata(monkeypatch):
+    controller = BrowserController("http://127.0.0.1:9222")
+    monkeypatch.setattr(browser_session, "_tcp_reachable", lambda _host, _port: True)
+
+    valid_payload = json.dumps(
+        {
+            "Browser": "Chrome/136.0",
+            "webSocketDebuggerUrl": (
+                "ws://localhost:9222/devtools/browser/opaque-browser-id"
+            ),
+        }
+    ).encode()
+    monkeypatch.setattr(
+        browser_session,
+        "urlopen",
+        lambda _url, *, timeout: _MetadataResponse(valid_payload),
+    )
+
+    valid = controller.endpoint_status()
+
+    assert valid["available"] is True
+    assert valid["tcp_reachable"] is True
+    assert valid["cdp_metadata_reachable"] is True
+    assert "webSocketDebuggerUrl" not in valid
+    assert "opaque-browser-id" not in str(valid)
+
+    monkeypatch.setattr(
+        browser_session,
+        "urlopen",
+        lambda _url, *, timeout: _MetadataResponse(b"<html>not Chrome</html>"),
+    )
+    invalid = controller.endpoint_status()
+
+    assert invalid["available"] is False
+    assert invalid["reason"] == "invalid_cdp_metadata"
+    assert "not valid Chrome CDP metadata" in invalid["instruction"]
+
+    unsafe_payload = json.dumps(
+        {
+            "Browser": "Chrome/136.0",
+            "webSocketDebuggerUrl": (
+                "ws://browser.example.org:9222/devtools/browser/opaque-browser-id"
+            ),
+        }
+    ).encode()
+    monkeypatch.setattr(
+        browser_session,
+        "urlopen",
+        lambda _url, *, timeout: _MetadataResponse(unsafe_payload),
+    )
+    unsafe = controller.endpoint_status()
+
+    assert unsafe["available"] is False
+    assert unsafe["reason"] == "unsafe_cdp_websocket"
+    assert "browser.example.org" not in str(unsafe)
+
+
+def test_bridge_status_rejects_oversized_chrome_metadata(monkeypatch):
+    controller = BrowserController("http://127.0.0.1:9222")
+    monkeypatch.setattr(browser_session, "_tcp_reachable", lambda _host, _port: True)
+    monkeypatch.setattr(
+        browser_session,
+        "urlopen",
+        lambda _url, *, timeout: _MetadataResponse(b"x" * 65_537),
+    )
+
+    status = controller.endpoint_status()
+
+    assert status["available"] is False
+    assert status["reason"] == "invalid_cdp_metadata"
 
 
 def test_browser_rejects_non_loopback_or_credentialed_cdp_endpoints():
