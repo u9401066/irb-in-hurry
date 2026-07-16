@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+from urllib.error import URLError
 
 import pytest
 
+import irb_harness.infrastructure.browser_session as browser_session
 from irb_harness.application.page_mapping import sanitize_page_discovery
 from irb_harness.infrastructure.browser_session import (
     BrowserController,
+    BrowserUnavailable,
     HumanLoginRequired,
 )
 from irb_harness.infrastructure.contract_loader import load_contract
@@ -151,6 +154,42 @@ class _Context:
 class _Browser:
     def __init__(self, pages: list[_Page]) -> None:
         self.contexts = [_Context(pages)]
+
+
+def test_bridge_status_distinguishes_reverse_listener_from_missing_chrome(
+    monkeypatch,
+):
+    controller = BrowserController("http://127.0.0.1:9222")
+    monkeypatch.setattr(browser_session, "_tcp_reachable", lambda _host, _port: True)
+
+    def unavailable(_url, *, timeout):
+        assert timeout == 2
+        raise URLError(TimeoutError("timed out"))
+
+    monkeypatch.setattr(browser_session, "urlopen", unavailable)
+
+    status = controller.endpoint_status()
+
+    assert status["available"] is False
+    assert status["tcp_reachable"] is True
+    assert status["cdp_metadata_reachable"] is False
+    assert status["reason"] == "cdp_metadata_unavailable"
+    assert "Chrome CDP metadata is unavailable" in status["instruction"]
+
+
+def test_browser_rejects_non_loopback_or_credentialed_cdp_endpoints():
+    external = BrowserController("http://192.0.2.10:9222")
+    credentialed = BrowserController("http://secret@example.org:9222/path?token=x")
+
+    external_status = external.endpoint_status()
+    credentialed_status = credentialed.endpoint_status()
+
+    assert external_status["reason"] == "unsafe_cdp_endpoint"
+    assert credentialed_status["reason"] == "unsafe_cdp_endpoint"
+    assert "secret" not in credentialed_status["endpoint"]
+    assert "token" not in credentialed_status["endpoint"]
+    with pytest.raises(BrowserUnavailable, match="HTTP loopback"):
+        asyncio.run(external.connect())
 
 
 def test_session_status_uses_requested_page_ref_and_ignores_hidden_login_controls(

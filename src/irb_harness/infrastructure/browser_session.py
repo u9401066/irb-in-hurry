@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import os
+import socket
 from typing import Any, Mapping
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
@@ -40,9 +42,29 @@ class BrowserController:
 
     def endpoint_status(self) -> dict[str, Any]:
         """Probe CDP metadata without returning the browser websocket URL."""
+        result = {
+            "endpoint": _endpoint_label(self.endpoint),
+            "available": False,
+            "tcp_reachable": False,
+            "cdp_metadata_reachable": False,
+            "attachment_mode": "existing_human_authenticated_chromium",
+            "credentials_handled": False,
+        }
+        try:
+            host, port = _validated_cdp_endpoint(self.endpoint)
+        except ValueError:
+            result["reason"] = "unsafe_cdp_endpoint"
+            result["instruction"] = (
+                "Use an HTTP loopback endpoint such as http://127.0.0.1:9222 "
+                "without credentials, path, query, or fragment."
+            )
+            return result
+
+        tcp_reachable = _tcp_reachable(host, port)
+        result["tcp_reachable"] = tcp_reachable
         version_url = f"{self.endpoint.rstrip('/')}/json/version"
         try:
-            with urlopen(version_url, timeout=2) as response:  # noqa: S310 - loopback/configured CDP endpoint
+            with urlopen(version_url, timeout=2) as response:  # noqa: S310 - validated loopback CDP endpoint
                 available = response.status == 200
                 reason = None if available else f"http_status_{response.status}"
         except HTTPError as exc:
@@ -54,19 +76,37 @@ class BrowserController:
         except (OSError, ValueError) as exc:
             available = False
             reason = _connection_reason(exc)
-        result = {
-            "endpoint": self.endpoint,
-            "available": available,
-            "attachment_mode": "existing_human_authenticated_chromium",
-            "credentials_handled": False,
-        }
+        result["available"] = available
+        result["cdp_metadata_reachable"] = available
+        if available:
+            result["tcp_reachable"] = True
+        elif tcp_reachable and not str(reason).startswith("http_status_"):
+            reason = "cdp_metadata_unavailable"
         if reason:
             result["reason"] = reason
+        if not available:
+            if tcp_reachable:
+                result["instruction"] = (
+                    "The reverse-forward listener is reachable, but Chrome CDP "
+                    "metadata is unavailable on the SSH client. Start the dedicated "
+                    "Chrome profile with --remote-debugging-port=9222, then rerun "
+                    "browser-status."
+                )
+            else:
+                result["instruction"] = (
+                    "Establish the SSH RemoteForward for 127.0.0.1:9222 and reconnect."
+                )
         return result
 
     async def connect(self) -> Any:
         if self._browser is not None and self._browser.is_connected():
             return self._browser
+        try:
+            _validated_cdp_endpoint(self.endpoint)
+        except ValueError as exc:
+            raise BrowserUnavailable(
+                "CDP endpoint must be an HTTP loopback origin without credentials"
+            ) from exc
         try:
             from playwright.async_api import async_playwright
 
@@ -487,6 +527,56 @@ def _connection_reason(reason: Any) -> str:
     if "name or service" in text or "getaddrinfo" in text:
         return "dns_resolution_failed"
     return normalized or "connection_failed"
+
+
+def _validated_cdp_endpoint(endpoint: str) -> tuple[str, int]:
+    parsed = urlparse(endpoint)
+    if (
+        parsed.scheme != "http"
+        or not parsed.hostname
+        or parsed.username
+        or parsed.password
+        or parsed.path not in {"", "/"}
+        or parsed.params
+        or parsed.query
+        or parsed.fragment
+    ):
+        raise ValueError("CDP endpoint must be a bare HTTP loopback origin")
+    host = parsed.hostname.lower()
+    if host != "localhost":
+        try:
+            address = ipaddress.ip_address(host)
+        except ValueError as exc:
+            raise ValueError("CDP endpoint hostname must be loopback") from exc
+        if not address.is_loopback:
+            raise ValueError("CDP endpoint address must be loopback")
+    try:
+        port = parsed.port or 80
+    except ValueError as exc:
+        raise ValueError("CDP endpoint port is invalid") from exc
+    return host, port
+
+
+def _endpoint_label(endpoint: str) -> str:
+    """Return an origin-only label and never echo embedded credentials or paths."""
+    try:
+        parsed = urlparse(endpoint)
+        if not parsed.scheme or not parsed.hostname:
+            return "<invalid-cdp-endpoint>"
+        host = parsed.hostname
+        host_label = f"[{host}]" if ":" in host else host
+        port = f":{parsed.port}" if parsed.port is not None else ""
+        return f"{parsed.scheme}://{host_label}{port}"
+    except ValueError:
+        return "<invalid-cdp-endpoint>"
+
+
+def _tcp_reachable(host: str, port: int) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=0.75):
+            return True
+    except OSError:
+        return False
 
 
 def _reviewed_control(mapping: Mapping[str, Any], control_id: str) -> Mapping[str, Any]:
