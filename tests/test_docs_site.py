@@ -41,6 +41,9 @@ def test_docs_site_has_accessible_core_sections_and_relative_assets():
     assert "已審核 requirement/control 綁定" in site
     assert "tunnel 已建立，待 Chrome CDP" in site
     assert "只接受 loopback CDP" in site
+    assert "同埠 WebSocket" in site
+    assert "DOM 唯一性驗證" in site
+    assert "過濾契約網域" in site
 
 
 def test_pages_workflow_uses_official_artifact_deployment_actions():

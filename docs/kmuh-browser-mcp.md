@@ -70,6 +70,10 @@ desktop, edit the same `Host` entry used to open the workspace, then reconnect.
 The configured CDP endpoint must be a bare HTTP loopback origin such as
 `http://127.0.0.1:9222`. Credentials, path/query data, non-loopback hosts, and
 remote exposed browsers are rejected before Playwright attachment.
+`browser-status` also parses at most 64 KiB of `/json/version`, requires Chrome
+browser metadata, and verifies that the advertised browser WebSocket stays on
+the same loopback port. The WebSocket URL and its opaque browser ID are never
+returned. Playwright attaches only to that validated WebSocket.
 
 Do not bind the debugging endpoint to `0.0.0.0` and do not reuse the everyday
 Chrome profile.
@@ -93,12 +97,15 @@ The initial server exposes:
 - `irb_requirements`: applicable contract requirements and their evidence
   readiness, filtered by explicit submission/review/workflow dimensions;
 - `irb_browser_bridge_status`: CDP reachability only;
-- `irb_browser_list_pages`: hashed titles and redacted route shapes;
+- `irb_browser_list_pages`: selected-contract-site tabs only, with hashed titles
+  and redacted route shapes; unrelated hosts are filtered before title reads;
 - `irb_site_session_status`: human-login gate state;
 - `irb_discover_current_page`: form-control labels, selectors, required flags,
   and risk class, without field values, page titles, body text, or case-list links;
 - `irb_sanitized_page_mapping`: keeps selectors and risk metadata while replacing
-  raw labels with SHA-256 identities; it does not write a local file;
+  raw labels with SHA-256 identities; IDs and names are accepted only when DOM
+  unique, while repeated groups receive unique ancestor/sibling paths; it does
+  not write a local file;
 - `irb_click_reviewed_control`: clicks one control from a content-addressed
   mapping only after explicit confirmation and live fingerprint/risk rechecks;
 - `irb_fill_reviewed_requirement`: fills one portal requirement only after its
@@ -109,7 +116,8 @@ The initial server exposes:
 
 Draft writes require both `IRB_WEB_WRITE_MODE=draft` and explicit confirmation
 for the exact field/value. Password, hidden, file, radio, button, and submit
-controls are rejected. A receipt returns only the value SHA-256. No submit,
+controls, plus disabled or readonly fields, are rejected during binding rather
+than being allowed to fail later at runtime. A receipt returns only the value SHA-256. No submit,
 approval, withdrawal, termination, or delete tool is exposed.
 
 When more than one `erec.kmuh.org.tw` tab is open, first call
@@ -121,6 +129,9 @@ only when visible; hidden template controls do not trigger a false
 `human_login_required` result. For a human-login site, discovery and writes also
 fail closed if an authenticated selector is not visible, rather than treating an
 unknown state as signed in.
+The inventory defaults to organization `kmuh` and site `kmuh_eirb`; pass an
+explicit organization/site pair for another contract. It never inventories all
+hosts in the attached profile.
 
 Reviewed read clicks are disabled by default. After inspecting the exact mapping
 and control, start the server with `IRB_WEB_CLICK_MODE=reviewed`; each call must
@@ -136,7 +147,8 @@ the separate `IRB_WEB_WRITE_MODE=draft` gate.
 2. Human opens the target eIRB page.
 3. MCP checks `irb_site_session_status`, with `page_ref` when multiple tabs match.
 4. MCP runs `irb_discover_current_page` and records the page fingerprint and
-   value-free control map.
+   value-free control map. Every emitted selector must identify exactly one live
+   element; repeated names fall back to a DOM-relative path.
 5. `uv run irb-contract map-page --site kmuh_eirb` writes a sanitized mapping
    below `.irb-web-artifacts/`; selectors remain usable, but raw labels are hashed.
 6. A human reviews the mapping, identifies the `control_id`, and runs:

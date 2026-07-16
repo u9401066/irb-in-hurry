@@ -122,11 +122,11 @@
         <div class="safety-grid">
           <article>
             <h3>不接觸密碼</h3>
-            <p>MCP 只接受 loopback CDP，attach 到人類已登入的專用 Chrome profile，不接收或保存 KMUH 帳密。</p>
+            <p>MCP 只接受 loopback CDP，驗證限量 JSON 與同埠 WebSocket 後，attach 到人類已登入的專用 Chrome profile；不接收 KMUH 帳密。</p>
           </article>
           <article>
             <h3>不保存案件內容</h3>
-            <p>頁面 mapping 保存 selector、雜湊識別與風險分類，不保存欄位值、本文或原始 label。</p>
+            <p>先過濾契約網域，再保存經 DOM 唯一性驗證的 selector、雜湊識別與風險分類；不讀其他網域 title，也不保存欄位值或本文。</p>
           </article>
           <article>
             <h3>沒有送出工具</h3>

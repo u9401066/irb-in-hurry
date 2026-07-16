@@ -15,7 +15,14 @@
 - **Symmetric media validation:** online downloads and human-provided local
   copies both validate PDF/DOCX/ZIP bytes, not only filenames or headers.
 - **Layered bridge readiness:** Browser status distinguishes the SSH TCP listener
-  from valid Chrome CDP metadata, while endpoint validation permits loopback only.
+  from valid Chrome CDP metadata. Attachment requires bounded JSON and a browser
+  WebSocket on the same loopback port; opaque debugger URLs are never returned.
+- **DOM-unique browser identities:** IDs and names are selectors only when they
+  match one live control; repeated groups use verified ancestor/sibling paths,
+  and contract binding rejects anything the draft runtime cannot safely fill.
+- **Contract-scoped inventory:** Browser tab enumeration filters allowed hosts
+  before reading titles, so one organization's MCP cannot inventory unrelated
+  pages in the attached dedicated profile.
 
 ## Evidence State Machine
 

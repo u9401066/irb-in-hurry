@@ -251,13 +251,18 @@ uv run irb-contract bind-requirement-control \
 
 `map-page` 將 mapping 寫入 git 忽略的 `.irb-web-artifacts/`；保留可操作 selector 與風險類別，
 但不保存欄位值、頁面本文或原始 label。送出、撤案、終止與刪除操作沒有 MCP tool。
+id 或 name 只有在 live DOM 唯一時才會直接用作 selector；同名 radio/checkbox 會改用經驗證的
+祖先與同層位置路徑，避免重複 selector 讓整張表單無法 mapping。
 若同時開了多個高醫分頁，可用 CLI `list-pages` 或 MCP `irb_browser_list_pages` 取得 `page_ref`，再在上述
 CLI 加上 `--page-ref c0pN`，可避免選到舊登入頁。
+`list-pages` 會在讀取 title 前先依契約網站過濾；無參數時只列 `kmuh_eirb`，不回報專用 Chrome
+中其他網域的分頁。其他組織可明確傳入 `--organization` 與 `--site`。
 唯讀按鈕操作也預設關閉；人工檢閱 content-addressed mapping 後，另設
 `IRB_WEB_CLICK_MODE=reviewed` 才能呼叫 `irb_click_reviewed_control`，而且每次仍需對指定
 `control_id` 明確確認。live fingerprint 或風險分類不同就會拒絕執行。
-`bind-requirement-control` 只接受 `portal_field` 與 input/select/textarea；頁面 mapping 的雜湊、
-selector、風險分類及人工審查決策會寫入契約，但原始 label 和欄位值不會寫入。
+`bind-requirement-control` 只接受 `portal_field` 與 runtime 可安全填寫、非 readonly 的
+input/select/textarea；頁面 mapping 的雜湊、selector、風險分類及人工審查決策會寫入契約，
+但原始 label 和欄位值不會寫入。
 草稿填寫應呼叫 MCP `irb_fill_reviewed_requirement`；它會再次比對 requirement、site、mapping SHA、
 control ID、selector、欄位型別、live fingerprint 與輸入 value type。舊的 `irb_fill_draft_field`
 僅保留相容性，任意 selector 不再可用。兩者都需要 `IRB_WEB_WRITE_MODE=draft` 與本次欄位／值的
@@ -265,7 +270,9 @@ control ID、selector、欄位型別、live fingerprint 與輸入 value type。�
 `browser-status` 會分開顯示 `tcp_reachable` 與 `cdp_metadata_reachable`。若前者為 `true`、後者為
 `false` 且 reason 是 `cdp_metadata_unavailable`，表示 RemoteForward 已建立，但 SSH client 上的
 Chrome 尚未用 `--remote-debugging-port=9222` 提供 CDP；啟動專用 profile 後直接重跑 status 即可。
-CDP endpoint 只接受不含帳密、path 或 query 的 HTTP loopback origin，避免連到遠端裸露瀏覽器。
+CDP endpoint 只接受不含帳密、path 或 query 的 HTTP loopback origin；`/json/version` 也必須是
+大小受限的有效 Chrome metadata，且其中 WebSocket 必須留在相同 loopback port。工具不回傳該
+WebSocket URL 或 browser ID，Playwright 只 attach 到驗證後的端點。
 
 ## 使用方式
 

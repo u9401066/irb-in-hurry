@@ -126,12 +126,19 @@ field values, body text, case links, and raw labels. There are no submit,
 approval, withdrawal, termination, or delete MCP tools. Draft writes and reviewed
 read clicks each require separate runtime switches and exact human confirmation.
 Draft fields must also resolve through one reviewed portal requirement, mapping
-digest, and control binding; arbitrary selector writes fail closed.
+digest, and control binding; arbitrary selector writes fail closed. Discovery
+uses an ID or name only when it identifies exactly one live element, otherwise it
+builds a unique ancestor/sibling path for repeated radio and checkbox groups.
+Bindings reject control types that the runtime cannot safely fill.
+Page inventory is contract-scoped before any title is read; the default command
+lists only `kmuh_eirb` tabs and does not report unrelated browser hosts.
 
 `browser-status` separates SSH listener reachability from Chrome CDP metadata.
 It accepts only bare HTTP loopback origins and never echoes endpoint credentials
-or paths. A reachable reverse-forward with an unavailable desktop Chrome target
-is reported as `cdp_metadata_unavailable`, rather than as a missing tunnel.
+or paths. It accepts metadata only when bounded JSON advertises a browser
+WebSocket on the same loopback port; that opaque URL is never returned. A
+reachable reverse-forward with an unavailable desktop Chrome target is reported
+as `cdp_metadata_unavailable`, rather than as a missing tunnel.
 
 Remote SSH users must reverse-forward the desktop Chrome loopback port to the
 execution host. See the [KMUH Browser MCP guide](docs/kmuh-browser-mcp.md).

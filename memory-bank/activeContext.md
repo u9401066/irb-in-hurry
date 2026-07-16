@@ -22,6 +22,14 @@ Refactor the fork into a multi-organization, citation-ready IRB harness:
   submit, approval, withdrawal, termination, or delete tool. Draft writes must
   resolve a content-addressed requirement/control binding and recheck the live
   page, field metadata, value type, runtime switch, and human confirmation.
+- CDP readiness now requires bounded Chrome `/json/version` JSON and an
+  advertised browser WebSocket on the same loopback port; HTML impostors,
+  oversized metadata, and remote WebSockets fail closed without endpoint leaks.
+- Browser discovery now emits only selectors that are unique in the live DOM,
+  including repeated-name radio/checkbox groups. Binding rejects file, radio,
+  readonly, and other controls the runtime cannot safely draft-fill.
+- Browser page inventory now requires a selected contract website and filters
+  unrelated hosts before reading their titles; KMUH eIRB remains the default.
 - Generic document compilation now uses content-derived source IDs and portable
   `urn:sha256:` identities, deduplicates identical bytes, omits absolute paths
   and runtime timestamps, and produces deterministic outputs.

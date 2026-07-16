@@ -35,6 +35,12 @@ Last updated: 2026-07-16
   CDP metadata readiness in `browser-status`.
 - [x] Restrict Browser MCP CDP attachment to credential-free HTTP loopback
   origins.
+- [x] Validate bounded Chrome discovery metadata and its same-port loopback
+  browser WebSocket before Playwright attachment.
+- [x] Generate DOM-unique selectors for repeated form groups and align reviewed
+  binding eligibility with the controls the draft runtime can actually fill.
+- [x] Scope page inventory to a selected contract website before reading titles,
+  defaulting to KMUH eIRB without exposing unrelated profile tabs.
 
 ## Doing
 
