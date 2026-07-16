@@ -1,6 +1,6 @@
 # Progress
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 
 ## Done
 
@@ -31,10 +31,15 @@ Last updated: 2026-07-15
   live page/type checks, and value-type validation.
 - [x] Let a newly compiled organization add or explicitly replace workflow
   transitions from human definitions and verified evidence spans.
+- [x] Establish the SSH reverse-forward listener and distinguish it from Chrome
+  CDP metadata readiness in `browser-status`.
+- [x] Restrict Browser MCP CDP attachment to credential-free HTTP loopback
+  origins.
 
 ## Doing
 
-- [ ] Establish the desktop-Chrome reverse SSH bridge on port 9222.
+- [ ] Start desktop Chrome with its dedicated profile and CDP port 9222; the
+  reverse SSH listener is already established.
 - [ ] Review and merge draft PR #2 so the first Pages deployment can run from
   `main`.
 

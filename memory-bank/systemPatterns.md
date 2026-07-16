@@ -14,6 +14,8 @@
   make compile outputs deterministic without workstation absolute paths.
 - **Symmetric media validation:** online downloads and human-provided local
   copies both validate PDF/DOCX/ZIP bytes, not only filenames or headers.
+- **Layered bridge readiness:** Browser status distinguishes the SSH TCP listener
+  from valid Chrome CDP metadata, while endpoint validation permits loopback only.
 
 ## Evidence State Machine
 

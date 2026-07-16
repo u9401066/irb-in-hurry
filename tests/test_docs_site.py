@@ -39,6 +39,8 @@ def test_docs_site_has_accessible_core_sections_and_relative_assets():
     site = (ROOT / "site" / "index.html").read_text(encoding="utf-8")
     assert "不洩漏本機路徑" in site
     assert "已審核 requirement/control 綁定" in site
+    assert "tunnel 已建立，待 Chrome CDP" in site
+    assert "只接受 loopback CDP" in site
 
 
 def test_pages_workflow_uses_official_artifact_deployment_actions():

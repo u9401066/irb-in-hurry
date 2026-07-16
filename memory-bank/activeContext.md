@@ -1,6 +1,6 @@
 # Active Context
 
-Last updated: 2026-07-15
+Last updated: 2026-07-16
 
 ## Current Goal
 
@@ -42,15 +42,18 @@ Refactor the fork into a multi-organization, citation-ready IRB harness:
 ## Current Blockers
 
 - Codex runs on Remote SSH host `affineserver` (`192.168.1.111`). Desktop Chrome
-  is on SSH client `192.168.1.2`; the client must add
-  `RemoteForward 127.0.0.1:9222 127.0.0.1:9222` and reconnect.
+  is on SSH client `192.168.1.2`. The reverse listener is now established and
+  accepts TCP, but Chrome's `/json/version` is unavailable through it. Start the
+  dedicated client-side Chrome profile with `--remote-debugging-port=9222`, then
+  rerun `browser-status`.
 - The Remote SSH host cannot retrieve the official KMUH source bytes. Evidence
   hashes and locators must stay unverified until routing is available or the
   official files are copied into the workspace and processed with `import-local`.
 
 ## Next Verification
 
-1. Confirm `uv run irb-contract browser-status` reports `available: true`.
+1. Confirm `uv run irb-contract browser-status` reports `tcp_reachable: true`,
+   `cdp_metadata_reachable: true`, and `available: true`.
 2. List open KMUH pages, check login state, and perform value-free discovery.
 3. Write a content-addressed page map and bind only human-reviewed controls.
 4. Retrieve or import official source bytes and map reviewed evidence spans.

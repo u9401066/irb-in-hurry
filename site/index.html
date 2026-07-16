@@ -48,7 +48,7 @@
             <li><span class="dot ready"></span><strong>契約核心</strong><span>已實作</span></li>
             <li><span class="dot ready"></span><strong>安全 MCP</strong><span>已實作</span></li>
             <li><span class="dot pending"></span><strong>KMUH 證據</strong><span>待取回原始 bytes</span></li>
-            <li><span class="dot pending"></span><strong>真實頁面 mapping</strong><span>待 CDP bridge</span></li>
+            <li><span class="dot pending"></span><strong>真實頁面 mapping</strong><span>tunnel 已建立，待 Chrome CDP</span></li>
           </ul>
           <p class="status-note">尚未驗證的內容會保持 <code>needs_evidence</code>，不冒充正式規則。</p>
         </aside>
@@ -122,7 +122,7 @@
         <div class="safety-grid">
           <article>
             <h3>不接觸密碼</h3>
-            <p>MCP 只 attach 到人類已登入的專用 Chrome profile，不接收或保存 KMUH 帳密。</p>
+            <p>MCP 只接受 loopback CDP，attach 到人類已登入的專用 Chrome profile，不接收或保存 KMUH 帳密。</p>
           </article>
           <article>
             <h3>不保存案件內容</h3>

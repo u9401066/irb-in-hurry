@@ -13,3 +13,4 @@
 | 2026-07-15 | Make local compilation content-stable and path-free. | Organization contracts and evidence indexes must be portable across workstations and reproducible from identical bytes. |
 | 2026-07-15 | Require every browser draft write to resolve a reviewed portal requirement binding. | An arbitrary selector bypasses the contract boundary; mapping, control, field/value type, live fingerprint, runtime switch, and exact human confirmation must all agree. |
 | 2026-07-15 | Add workflow transitions only from explicit definitions plus verified spans. | A newly compiled organization needs a supported path to its first workflow event without either guessing rules or requiring untracked manual YAML edits. |
+| 2026-07-16 | Accept Browser MCP CDP endpoints only on credential-free HTTP loopback origins. | Human-login attachment should travel through a local/reverse-forwarded trust boundary, never a remotely exposed browser debugger. |

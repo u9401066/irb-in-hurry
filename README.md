@@ -7,7 +7,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml/badge.svg)](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-72%20passed-brightgreen.svg)](#validation)
+[![Tests](https://img.shields.io/badge/tests-74%20passed-brightgreen.svg)](#validation)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
@@ -128,6 +128,11 @@ read clicks each require separate runtime switches and exact human confirmation.
 Draft fields must also resolve through one reviewed portal requirement, mapping
 digest, and control binding; arbitrary selector writes fail closed.
 
+`browser-status` separates SSH listener reachability from Chrome CDP metadata.
+It accepts only bare HTTP loopback origins and never echoes endpoint credentials
+or paths. A reachable reverse-forward with an unavailable desktop Chrome target
+is reported as `cdp_metadata_unavailable`, rather than as a missing tunnel.
+
 Remote SSH users must reverse-forward the desktop Chrome loopback port to the
 execution host. See the [KMUH Browser MCP guide](docs/kmuh-browser-mcp.md).
 
@@ -154,7 +159,7 @@ uv build
 git diff --check
 ```
 
-The 72 regression tests cover deterministic path-free contract compilation,
+The 74 regression tests cover deterministic path-free contract compilation,
 contract and evidence validation, signature-checked online and offline source
 acquisition, requirement mapping, reviewed portal writes, browser safety policy,
 the GitHub Pages site, and the retained KFSYSCC generation path.

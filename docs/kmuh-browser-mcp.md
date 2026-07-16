@@ -55,10 +55,21 @@ outbound SSH settings and cannot modify the already-established VS Code
 connection. In VS Code, run `Remote-SSH: Open SSH Configuration File` on the
 desktop, edit the same `Host` entry used to open the workspace, then reconnect.
 
-If `browser-status` still reports `connection_refused`, verify on the remote
-host that `127.0.0.1:9222` has a listener and confirm Chrome was started with
-both `--remote-debugging-port=9222` and a non-default `--user-data-dir` before
-the SSH connection was established.
+`browser-status` reports the two bridge layers separately:
+
+- `tcp_reachable: false` means the execution host cannot reach a reverse-forward
+  listener; add/fix `RemoteForward` and reconnect SSH.
+- `tcp_reachable: true` with `cdp_metadata_reachable: false` and
+  `reason: cdp_metadata_unavailable` means the tunnel listener exists, but the
+  SSH client cannot provide Chrome's `/json/version`. Start the dedicated Chrome
+  profile with both `--remote-debugging-port=9222` and a non-default
+  `--user-data-dir`, then rerun `browser-status`.
+- both values `true` means CDP attachment may proceed; it does not itself prove
+  that a KMUH tab is signed in, so the site session gate still runs next.
+
+The configured CDP endpoint must be a bare HTTP loopback origin such as
+`http://127.0.0.1:9222`. Credentials, path/query data, non-loopback hosts, and
+remote exposed browsers are rejected before Playwright attachment.
 
 Do not bind the debugging endpoint to `0.0.0.0` and do not reuse the everyday
 Chrome profile.

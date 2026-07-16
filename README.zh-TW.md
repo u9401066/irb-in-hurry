@@ -5,7 +5,7 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![CI](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml/badge.svg)](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-72%20passed-brightgreen.svg)](#測試)
+[![Tests](https://img.shields.io/badge/tests-74%20passed-brightgreen.svg)](#測試)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![Legacy forms](https://img.shields.io/badge/KFSYSCC%20forms-43%2F43-brightgreen.svg)](#kfsyscc-相容層表單涵蓋範圍)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
@@ -262,6 +262,10 @@ selector、風險分類及人工審查決策會寫入契約，但原始 label �
 control ID、selector、欄位型別、live fingerprint 與輸入 value type。舊的 `irb_fill_draft_field`
 僅保留相容性，任意 selector 不再可用。兩者都需要 `IRB_WEB_WRITE_MODE=draft` 與本次欄位／值的
 明確人工確認，結果只回傳 value SHA-256，不回傳原始值，也不會送出表單。
+`browser-status` 會分開顯示 `tcp_reachable` 與 `cdp_metadata_reachable`。若前者為 `true`、後者為
+`false` 且 reason 是 `cdp_metadata_unavailable`，表示 RemoteForward 已建立，但 SSH client 上的
+Chrome 尚未用 `--remote-debugging-port=9222` 提供 CDP；啟動專用 profile 後直接重跑 status 即可。
+CDP endpoint 只接受不含帳密、path 或 query 的 HTTP loopback origin，避免連到遠端裸露瀏覽器。
 
 ## 使用方式
 
@@ -382,7 +386,7 @@ automation:
 make test
 ```
 
-72 項測試涵蓋決定性且不含本機路徑的契約編譯、契約驗證、線上／離線來源簽章與 locator、
+74 項測試涵蓋決定性且不含本機路徑的契約編譯、契約驗證、線上／離線來源簽章與 locator、
 人工審核 requirement／portal 欄位綁定與草稿寫入、安全下載／ZIP 解包、去識別化頁面 mapping、Browser MCP 安全政策，以及舊 KFSYSCC
 表單選取、GitHub Pages 說明站與端對端產生測試。
 
