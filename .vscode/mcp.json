@@ -1,0 +1,13 @@
+{
+  "servers": {
+    "kmuh-irb": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "irb-web-mcp"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "IRB_WEB_CDP_ENDPOINT": "http://127.0.0.1:9222"
+      }
+    }
+  }
+}

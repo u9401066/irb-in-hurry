@@ -65,10 +65,8 @@ FORM_REGISTRY = {
     "PROPOSAL": ("中文計畫摘要", "generators.proposal", "generate_proposal_summary"),
 }
 
-# KFSYSCC/KMU baseline: same form-selection behavior and output set.
-# KMUH is aligned here in full by default, so phase routing is explicitly
-# represented instead of silently falling back.
-# 1) Base rule set (shared by the default institutional profiles in this repo).
+# Legacy KFSYSCC SF form selection. KMUH must use the organization contract
+# harness because its official bundles and portal workflow are different.
 KFSYSCC_PHASE_FORMS = {
     "new": {
         "base": ["SF001", "SF002", "SF094", "PROPOSAL"],
@@ -136,17 +134,19 @@ KFSYSCC_PHASE_FORMS = {
 
 INSTITUTION_PHASE_FORMS = {
     "kfsyscc": KFSYSCC_PHASE_FORMS,
-    "kmuh": KFSYSCC_PHASE_FORMS,
 }
 
 PHASE_FORMS = KFSYSCC_PHASE_FORMS
 
 
 def _effective_phase_rules(phase_rules, institution_id):
-    """Return phase rules for institution, defaulting to KFSYSCC behavior."""
+    """Return legacy rules only when they are authoritative for the institution."""
     if institution_id in INSTITUTION_PHASE_FORMS:
         return INSTITUTION_PHASE_FORMS[institution_id]
-    return phase_rules
+    raise ValueError(
+        f"Institution '{institution_id}' is not supported by the legacy SF generator. "
+        "Use `irb-contract show` and an organization contract adapter instead."
+    )
 
 
 def get_institution_phase_rules(config_or_institution):
@@ -173,7 +173,12 @@ def select_forms(config, institution=None):
     """
     config = _apply_study_type_defaults(config)
     phase = config["phase"]
-    ruleset = get_institution_phase_rules(institution if institution is not None else config)
+    # This API is the KFSYSCC legacy adapter. Old configs without an institution
+    # remain KFSYSCC; the new organization-contract loader defaults to KMUH.
+    selection_institution = institution
+    if selection_institution is None:
+        selection_institution = config.get("institution", "kfsyscc")
+    ruleset = get_institution_phase_rules(selection_institution)
 
     if phase not in ruleset:
         raise ValueError(f"Unknown phase: {phase}. Valid: {list(ruleset.keys())}")

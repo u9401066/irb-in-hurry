@@ -1,293 +1,191 @@
 # IRB-in-Hurry
 
+> Architecture migration in progress: the new `irb_harness` core turns
+> organization-provided documents into evidence-tracked contracts, with KMUH as
+> the bundled default. The historical `scripts/generators` modules remain a
+> KFSYSCC compatibility layer and are not official KMUH forms.
+
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-15%20passed-brightgreen.svg)](#testing)
-[![Forms](https://img.shields.io/badge/IRB%20forms-43%2F43-brightgreen.svg)](#form-coverage)
+[![CI](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml/badge.svg)](https://github.com/u9401066/irb-in-hurry/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-74%20passed-brightgreen.svg)](#validation)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-087f8c.svg)](https://u9401066.github.io/irb-in-hurry/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 
-Automated IRB document preparation for [KFSYSCC](https://www.kfsyscc.org/) (Koo Foundation Sun Yat-Sen Cancer Center).
+IRB-in-Hurry is a citation-ready document and browser harness for institutional
+review board workflows. It does not bypass ethics review, approve studies, or
+submit applications. It reduces repetitive work while keeping institutional
+rules traceable to the exact source bytes and text spans reviewed by a human.
 
-Fill in a YAML config with your study details, run one command, and get all required IRB submission forms as Word documents — ready to sign and submit.
+[繁體中文版 README](README.zh-TW.md) ·
+[Documentation site](https://u9401066.github.io/irb-in-hurry/)
 
-[繁體中文版 README](README.zh-TW.md)
+## What changed in this fork
 
----
+The original project encoded KFSYSCC form IDs and routing rules directly in
+generators. That works only for that institution. This fork introduces an
+organization contract with five separate concerns:
 
-## Why This Exists
+1. Immutable organization-provided source documents.
+2. Human-reviewed workflow, requirement, and form applicability rules.
+3. Evidence bindings with source, manifest, span, and text hashes.
+4. Document adapters that consume reviewed contracts.
+5. Browser adapters that attach only after a human signs in.
 
-The Institutional Review Board (IRB) is one of the most important inventions in the history of medical research. Born from the ashes of the Nuremberg Trials (1947) and codified through the Declaration of Helsinki (1964) and the Belmont Report (1979), the IRB exists to ensure that no human being is subjected to research without informed consent, proper risk assessment, and ethical oversight. These are non-negotiable principles. The horrors of Tuskegee, Unit 731, and countless other episodes of unchecked medical experimentation remind us why.
+Contract compilation never infers institutional policy. A successful download
+is still marked `retrieved_needs_rule_mapping`; only a reviewed evidence mapping
+can become `verified`.
 
-**But somewhere along the way, the bureaucracy ate the mission.**
+## KMUH default
 
-What was meant to protect human subjects has calcified into a paperwork marathon. At [KFSYSCC](https://www.kfsyscc.org/human/common_files/1) alone, researchers must navigate **11 submission categories** and **43+ forms** — each with its own version number, formatting requirements, and checkbox conventions. A single retrospective chart review (minimal risk, no patient contact, de-identified data) requires 5 forms. A clinical trial? Double that. An amendment to fix a typo in your protocol? Another 4 forms.
+The bundled contract currently declares:
 
-The researcher's time is finite. Every hour spent copying IRB numbers into the header of form SF037 is an hour not spent analyzing data, writing manuscripts, or — most importantly — caring for patients. The forms themselves are not the problem. The problem is that filling them out is **mindless, repetitive, error-prone labor** that a machine should do.
+- 11 official source records;
+- 8 form sets;
+- 16 event-based workflow transitions;
+- 9 conservative candidate requirements;
+- the public KMUH clinical-trial directory and human-login eIRB portal.
 
-This project does not bypass the IRB. It does not skip ethical review. It does not auto-approve anything. It simply fills in the forms that the IRB requires, using the data you provide, so you can focus on the parts that actually require human judgment: study design, risk assessment, and the protection of your participants.
+The candidate requirements remain `needs_evidence` until the official source
+bytes are retrieved and their locators are reviewed. They must not be treated as
+verified KMUH policy yet.
 
-> "The ethics of research is in the design, not the paperwork."
+KMUH is modeled as an event graph, not a fixed new → amendment → continuing →
+closure sequence. Revision, safety reporting, non-compliance, suspension,
+termination, closure, and withdrawal are independent branches where applicable.
 
-**IRB-in-Hurry: because your time is better spent on science.**
-
----
-
-## Features
-
-- **11 IRB categories** supported: new case, amendment, continuing review, closure, SAE, IB update, import, suspension, appeal, re-review, and other
-- **43 form generators** with automatic selection based on study type and submission phase
-- **Smart routing**: retrospective study automatically selects expedited review + consent waiver forms
-- **DOCX generation** using python-docx with proper formatting (standard KaiTi font, ■/□ checkboxes)
-- **PDF + PNG preview** pipeline for visual validation
-- **Plain-text checklist** (■/□) tracking both generated forms and manual steps
-- **Color-coded dashboard** for submission status overview
-- **Claude Code skill** for AI-assisted form preparation
-- **GitHub Copilot instructions + setup workflow** for cloud-agent compatibility
-- **Config-driven workflow hooks** to enforce generation/conversion steps
-- **Asset Aware MCP conversion backend** via configurable output commands
-
-## Form Coverage
-
-All forms from the [KFSYSCC IRB website](https://www.kfsyscc.org/human/common_files/1) are implemented:
-
-| Category | Chinese | Forms | Status |
-|----------|---------|-------|--------|
-| New case | [新案審查](https://www.kfsyscc.org/human/common_files/1) | SF001, SF002, SF094, SF003-005 | ■ Complete |
-| Re-review | [複審案審查](https://www.kfsyscc.org/human/common_files/2) | SF019 | ■ Complete |
-| Amendment | [修正案審查](https://www.kfsyscc.org/human/common_files/3) | SF014, SF015, SF016 | ■ Complete |
-| Continuing | [期中審查](https://www.kfsyscc.org/human/common_files/4) | SF030, SF031, SF032 | ■ Complete |
-| Closure | [結案審查](https://www.kfsyscc.org/human/common_files/5) | SF036, SF037, SF038, SF023 | ■ Complete |
-| SAE | [嚴重不良反應](https://www.kfsyscc.org/human/common_files/6) | SF079, SF044, SF074, SF080, SF024 | ■ Complete |
-| IB update | [主持人手冊](https://www.kfsyscc.org/human/common_files/7) | SF082, SF083, SF084, SF085 | ■ Complete |
-| Import | [專案進口](https://www.kfsyscc.org/human/common_files/8) | SF066, SF067, SF068, SF093 | ■ Complete |
-| Other | [其他表單](https://www.kfsyscc.org/human/common_files/9) | SF076 | ■ Complete |
-| Suspension | [計畫暫停](https://www.kfsyscc.org/human/common_files/10) | SF047, SF048 | ■ Complete |
-| Appeal | [申覆案審查](https://www.kfsyscc.org/human/common_files/11) | SF077, SF054 | ■ Complete |
-| Consent | — | SF062, SF063, SF075, SF090, SF091, SF092 | ■ Complete |
-
-## Quick Start
+## Quick start
 
 ```bash
-# 1. Clone and setup
-git clone https://github.com/htlin222/irb-in-hurry.git
-cd irb-in-hurry
-make setup
+uv sync --group dev
 
-# 2. Edit config.yml with your study details
-#    (or copy the example fixture)
+# Validate the bundled KMUH contract and show outstanding evidence work.
+uv run irb-contract show
+
+# Query explicit applicability dimensions without hidden rule inference.
+uv run irb-contract requirements \
+  --submission-type new \
+  --review-track general \
+  --workflow-event submit_new
+```
+
+Compile another institution's PDF, DOCX, Markdown, HTML, or text documents into
+a draft contract and evidence index:
+
+```bash
+uv run irb-contract compile \
+  --institution example \
+  --name "Example IRB" \
+  --document /path/to/instructions.pdf \
+  --document /path/to/forms.docx \
+  --output output/contracts/example.yml
+```
+
+The compiler records byte and text SHA-256 values, content-stable source/span
+IDs, line/character/UTF-8 byte offsets, and short context. Repeated identical inputs are
+deduplicated, outputs are deterministic, and neither the contract nor evidence
+index contains a workstation absolute path. A reviewer then uses `map-workflow`
+to create or replace an explicit transition, `map-evidence` to bind an existing
+transition, or `map-requirement` to upsert a requirement from selected spans.
+
+When the execution host cannot reach an institution's official URL, a human may
+download that declared asset in a browser and copy it into the workspace:
+
+```bash
+uv run irb-contract import-local \
+  --source kmuh_sop_02_01 \
+  --file /path/to/official/KMUH-SOP-02-01.pdf \
+  --human-confirmed-source
+```
+
+Online retrieval and local import both verify the declared asset selection and
+file signature/container, so an HTML error page cannot masquerade as a PDF,
+DOCX, or ZIP. The importer also verifies stable bytes and the immutable cache
+copy. It records a local-copy acquisition mode
+without storing the original absolute path. Existing SHA-256 changes require
+explicit `--allow-revision`; import still stops at `needs_mapping`.
+
+See [README.zh-TW.md](README.zh-TW.md) for the complete synchronization and
+mapping commands, and [contract architecture](docs/contract-architecture.md)
+for the invariants.
+
+## Human-login KMUH Browser MCP
+
+The browser server receives no KMUH credentials. It attaches over Chrome DevTools
+Protocol to a dedicated Chromium profile after a human signs in.
+
+```bash
+uv run irb-contract browser-status
+uv run irb-contract list-pages
+uv run irb-contract session-status --site kmuh_eirb
+uv run irb-contract map-page --site kmuh_eirb
+uv run irb-web-mcp
+```
+
+Page mappings keep selectors, hashed identities, and action risk, but exclude
+field values, body text, case links, and raw labels. There are no submit,
+approval, withdrawal, termination, or delete MCP tools. Draft writes and reviewed
+read clicks each require separate runtime switches and exact human confirmation.
+Draft fields must also resolve through one reviewed portal requirement, mapping
+digest, and control binding; arbitrary selector writes fail closed. Discovery
+uses an ID or name only when it identifies exactly one live element, otherwise it
+builds a unique ancestor/sibling path for repeated radio and checkbox groups.
+Bindings reject control types that the runtime cannot safely fill.
+Page inventory is contract-scoped before any title is read; the default command
+lists only `kmuh_eirb` tabs and does not report unrelated browser hosts.
+
+`browser-status` separates SSH listener reachability from Chrome CDP metadata.
+It accepts only bare HTTP loopback origins and never echoes endpoint credentials
+or paths. It accepts metadata only when bounded JSON advertises a browser
+WebSocket on the same loopback port; that opaque URL is never returned. A
+reachable reverse-forward with an unavailable desktop Chrome target is reported
+as `cdp_metadata_unavailable`, rather than as a missing tunnel.
+
+Remote SSH users must reverse-forward the desktop Chrome loopback port to the
+execution host. See the [KMUH Browser MCP guide](docs/kmuh-browser-mcp.md).
+
+## Legacy KFSYSCC compatibility
+
+The existing DOCX generators, PDF/PNG conversion, checklist, and dashboard
+remain available for KFSYSCC configurations:
+
+```bash
 cp tests/fixtures/sample_retrospective.yml config.yml
-
-# 2.5 KMUH alignment (recommended, phase-first order)
-#     institution: kmuh
-#     harness:
-#       group_by_phase: true
-#       phases:
-#         - new
-#         - amendment
-#         - continuing
-#         - closure
-
-# 3. Generate everything
 make all
 ```
 
-## Usage
+If `institution: kmuh` is selected, the legacy generator path fails closed
+instead of relabeling KFSYSCC SF forms as KMUH forms.
 
-### Makefile Commands
-
-| Command | Description |
-|---------|-------------|
-| `make all` | Generate DOCX + PDF + dashboard |
-| `make generate` | Generate DOCX forms only |
-| `make pdf` | Convert DOCX to PDF + PNG previews |
-| `make dashboard` | Show submission status |
-| `make checklist` | View ■/□ checklist |
-| `make test` | Run pytest |
-| `make clean` | Remove generated files |
-| `make new` | Switch to new case phase + generate |
-| `make closure` | Switch to closure phase + generate |
-| `make amendment` | Switch to amendment phase + generate |
-| `make continuing` | Switch to continuing review + generate |
-| `make kmuh-seq` | Set KMUH full sequence (new→amendment→continuing→closure) + generate |
-
-If `make` is not available, use:
+## Validation
 
 ```bash
-./bin/irb new
-./bin/irb kmuh-seq
-./bin/irb report-kmuh
+uv run ruff check src/irb_harness scripts/report_kmuh.py tests/
+uv run mypy src --ignore-missing-imports
+uv run pytest tests/ -q
+uv build
+git diff --check
 ```
 
-### Workflow
+The 74 regression tests cover deterministic path-free contract compilation,
+contract and evidence validation, signature-checked online and offline source
+acquisition, requirement mapping, reviewed portal writes, browser safety policy,
+the GitHub Pages site, and the retained KFSYSCC generation path.
 
+## Project map
+
+```text
+src/irb_harness/
+├── domain/          # pure contracts and safety invariants
+├── application/     # compile, sync, evidence, requirement and website mapping
+├── infrastructure/  # document, archive, browser and policy adapters
+├── presentation/    # CLI and MCP tools
+└── contracts/       # bundled organization contracts (KMUH default)
+
+docs/                # architecture and operator guides
+site/                # dependency-free GitHub Pages site
+scripts/generators/  # historical KFSYSCC compatibility layer
 ```
-config.yml → generate_all.py → output/<phase>/*.docx → convert.py → output/<phase>/*.pdf
-                                                           → output/<phase>/preview/*.png
-                                  checklist.md ← checklist.py
-```
-
-In harness mode, each phase is generated under `output/<phase>/`.
-
-KMUH process order in this repository:
-- new → amendment → continuing → closure
-
-1. **Edit `config.yml`** — Fill in study metadata (IRB number, titles, PI info, dates, study type)
-2. **`make all`** — Generates DOCX forms, converts to PDF, shows dashboard
-3. **Review previews** — Check `output/<phase>/preview/*.png` for visual validation
-4. **Complete manual steps** — Sign forms, attach protocol, and email to the institution mailbox from config
-
-### Config Schema
-
-```yaml
-study:
-  irb_no: "20250801A"
-  title_zh: "研究中文標題"
-  title_en: "English Title"
-  type: retrospective        # retrospective|prospective|clinical_trial
-  review_type: expedited     # exempt|expedited|full_board
-
-pi:
-  name: "林協霆"
-  dept: "腫瘤內科部／醫師"
-  email: "tmwang@kmuh.org.tw"
-
-subjects:
-  planned_n: 300
-  consent_waiver: true       # auto-set for retrospective
-
-institution: kmuh
-
-harness:
-  group_by_phase: true
-  phases:
-    - new
-    - amendment
-    - continuing
-    - closure
-
-phase: new                   # new|amendment|continuing|closure|sae|...
-
-automation:
-  hook_timeout: 120
-  hooks:
-    before_generate:
-      - 'python -c "print(\"validate config before generation\")"'
-    before_form_generate: []
-    after_form_generate: []
-    after_generate: []
-    before_convert: []
-    before_docx_to_pdf: []
-    after_docx_to_pdf: []
-    before_pdf_to_png: []
-    after_pdf_to_png: []
-    after_convert: []
-  conversion:
-    backend: libreoffice      # libreoffice|asset_aware_mcp
-    command: ""               # required when backend=asset_aware_mcp
-    timeout: 120
-```
-
-See [config-schema reference](.claude/skills/irb/references/config-schema.md) for all fields.
-
-### Study Type → Form Selection
-
-| Study Type | Review | Auto-selected Forms |
-|-----------|--------|-------------------|
-| Retrospective chart review | Expedited | SF001, SF002, SF094, SF003, SF005 |
-| Prospective observational | Expedited/Full | SF001, SF002, SF094, SF062 |
-| Clinical trial (drug) | Full board | SF001, SF002, SF094, SF063, SF090, SF022 |
-| Genetic research | Full board | SF001, SF002, SF094, SF075 |
-
-## Testing
-
-```bash
-make test
-```
-
-15 tests covering form selection logic, DOCX content verification, checklist generation, and end-to-end generation for both new case and closure phases.
-
-## Dependencies
-
-- Python 3.10+
-- [python-docx](https://python-docx.readthedocs.io/) — DOCX generation
-- [PyYAML](https://pyyaml.org/) — Config parsing
-- [LibreOffice](https://www.libreoffice.org/) — DOCX→PDF conversion (`brew install --cask libreoffice`)
-- [poppler](https://poppler.freedesktop.org/) — PDF→PNG preview (`brew install poppler`)
-
-## Claude Code Integration
-
-This project includes a [Claude Code skill](.claude/skills/irb/SKILL.md) that enables AI-assisted IRB form preparation. When using Claude Code in this repo, it can:
-
-- Classify your study type from a proposal description
-- Auto-fill `config.yml` based on your study details
-- Generate and validate all required forms
-- Guide you through manual steps
-
-## GitHub Copilot Integration
-
-This repo now also includes GitHub Copilot-specific setup:
-
-- [`.github/copilot-instructions.md`](.github/copilot-instructions.md) gives Copilot the same repo-specific workflow constraints as Claude
-- [`.github/workflows/copilot-setup-steps.yml`](.github/workflows/copilot-setup-steps.yml) preinstalls `uv` and syncs dependencies for Copilot cloud agent sessions
-
-## Workflow Hooks and Asset Aware MCP
-
-Optional hooks let you enforce each document-processing stage from `config.yml`:
-
-- `before_generate`, `before_form_generate`, `after_form_generate`, `after_generate`
-- `before_convert`, `before_docx_to_pdf`, `after_docx_to_pdf`, `before_pdf_to_png`, `after_pdf_to_png`, `after_convert`
-
-Each hook receives runtime data through environment variables such as `IRB_HOOK_CONFIG_PATH`, `IRB_HOOK_OUTPUT_DIR`, `IRB_HOOK_INPUT_PATH`, `IRB_HOOK_OUTPUT_PATH`, `IRB_HOOK_PHASE`, and `IRB_HOOK_IRB_NO`.
-
-To route DOCX→PDF conversion through [u9401066/asset-aware-mcp](https://github.com/u9401066/asset-aware-mcp), set:
-
-```yaml
-automation:
-  conversion:
-    backend: asset_aware_mcp
-    command: "your asset-aware-mcp command using IRB_HOOK_INPUT_PATH and IRB_HOOK_OUTPUT_PATH"
-```
-
-When `backend` is left as `libreoffice`, the existing LibreOffice conversion path is used unchanged.
-
-## Project Structure
-
-```
-irb-in-hurry/
-├── config.yml                 # Study metadata (single source of truth)
-├── Makefile                   # Easy commands
-├── dashboard.sh               # Status overview
-├── scripts/
-│   ├── docx_utils.py          # Shared DOCX helpers
-│   ├── form_selector.py       # 43-form registry + routing
-│   ├── generate_all.py        # Main orchestrator
-│   ├── checklist.py           # ■/□ checklist generator
-│   ├── convert.py             # DOCX→PDF→PNG pipeline
-│   └── generators/            # One module per IRB category
-│       ├── new_case.py        # SF001, SF002, SF094, SF011, SF022
-│       ├── consent.py         # SF003-005, SF062, SF063, SF075, SF090-092
-│       ├── closure.py         # SF036, SF037, SF038, SF023
-│       ├── amendment.py       # SF014, SF015, SF016
-│       ├── continuing_review.py # SF030, SF031, SF032
-│       ├── sae.py             # SF079, SF044, SF074, SF080, SF024
-│       ├── ib_update.py       # SF082, SF083, SF084, SF085
-│       ├── import_forms.py    # SF066, SF067, SF068, SF093
-│       ├── suspension.py      # SF047, SF048
-│       ├── appeal.py          # SF077, SF054
-│       ├── re_review.py       # SF019
-│       └── other.py           # SF076
-├── .claude/skills/irb/        # Claude Code skill set
-├── tests/                     # pytest suite
-└── output/                    # Generated files (gitignored)
-```
-
-## References
-
-- [KFSYSCC IRB Forms](https://www.kfsyscc.org/human/common_files/1) — Official form downloads
-- [Nuremberg Code (1947)](https://en.wikipedia.org/wiki/Nuremberg_Code) — Foundation of research ethics
-- [Declaration of Helsinki (1964)](https://www.wma.net/policies-post/wma-declaration-of-helsinki/) — Ethical principles for medical research
-- [The Belmont Report (1979)](https://www.hhs.gov/ohrp/regulations-and-policy/belmont-report/) — Respect, Beneficence, Justice
-- [Common Rule (45 CFR 46)](https://www.hhs.gov/ohrp/regulations-and-policy/regulations/45-cfr-46/) — U.S. federal regulations for human subjects research
 
 ## License
 
-MIT
+[MIT](LICENSE)

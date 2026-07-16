@@ -1,11 +1,7 @@
-.PHONY: help setup generate pdf preview dashboard checklist report-kmuh review clean test all new kmuh-seq closure amendment continuing
+.PHONY: help setup generate pdf preview dashboard checklist report-kmuh review clean test all new kmuh-seq closure amendment continuing contract-show browser-status session-status web-mcp
 
 define SET_PHASE
 	$(RUN) python -c "import yaml; c=yaml.safe_load(open('$(CONFIG)')); c['phase']='$(1)'; c.setdefault('harness',{}); c['harness']['group_by_phase']=True; c['harness']['phases']=['$(1)']; yaml.dump(c,open('$(CONFIG)','w'),allow_unicode=True,default_flow_style=False,sort_keys=False)"
-endef
-
-define SET_PHASE_SEQUENCE
-	$(RUN) python -c "import yaml; c=yaml.safe_load(open('$(CONFIG)')); c['phase']='$(1)'; c.setdefault('harness',{}); c['harness']['group_by_phase']=True; c['harness']['phases']=['new','amendment','continuing','closure']; yaml.dump(c,open('$(CONFIG)','w'),allow_unicode=True,default_flow_style=False,sort_keys=False)"
 endef
 
 CONFIG := config.yml
@@ -17,6 +13,18 @@ help: ## Show this help
 
 setup: ## Install dependencies
 	uv sync
+
+contract-show: ## Validate and summarize the default KMUH contract
+	$(RUN) irb-contract show
+
+browser-status: ## Probe the human-authenticated Chrome CDP bridge
+	$(RUN) irb-contract browser-status
+
+session-status: ## Check the open KMUH eIRB human-login state
+	$(RUN) irb-contract session-status --site kmuh_eirb
+
+web-mcp: ## Start the human-login-gated eIRB MCP server over stdio
+	$(RUN) irb-web-mcp
 
 generate: ## Generate DOCX forms from config.yml
 	$(RUN) python scripts/generate_all.py $(CONFIG)
@@ -30,7 +38,7 @@ dashboard: ## Show submission status
 	./dashboard.sh $(CONFIG)
 
 report-kmuh: ## Show KMUH phase-by-phase generation diff report
-	$(RUN) python scripts/report_kmuh.py $(CONFIG)
+	$(RUN) python scripts/report_kmuh.py
 
 checklist: ## View checklist
 	@for f in $$(find output -type f -name "checklist.md" | sort); do \
@@ -53,9 +61,10 @@ new: ## Set phase to new case + generate
 	$(call SET_PHASE,new)
 	$(MAKE) all
 
-kmuh-seq: ## Set KMUH full pipeline sequence and generate
-	$(call SET_PHASE_SEQUENCE,new)
-	$(MAKE) all
+kmuh-seq: ## Deprecated: KMUH is event-driven and uses the organization contract
+	@echo "KMUH is not a linear new -> amendment -> continuing -> closure sequence."
+	@echo "Run: uv run irb-contract show"
+	@exit 2
 
 closure: ## Set phase to closure + generate
 	$(call SET_PHASE,closure)

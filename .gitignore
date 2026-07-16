@@ -3,6 +3,9 @@ output/
 checklist.md
 reviewers/
 raw/
+.browser-profile/
+.irb-web-artifacts/
+.irb-source-cache/
 
 # Python / uv
 __pycache__/

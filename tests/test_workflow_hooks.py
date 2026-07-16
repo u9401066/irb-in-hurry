@@ -1,4 +1,5 @@
 """Tests for optional workflow hooks and conversion backends."""
+
 import json
 import os
 import sys
@@ -14,8 +15,7 @@ from scripts.generate_all import main as generate_all_main
 
 def write_env_values_command(target, *env_names):
     expression = " + '|' + ".join(
-        f"os.environ[{json.dumps(name)}]"
-        for name in env_names
+        f"os.environ[{json.dumps(name)}]" for name in env_names
     )
     return [
         "python",
