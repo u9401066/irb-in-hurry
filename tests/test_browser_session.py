@@ -306,6 +306,25 @@ def test_session_status_uses_requested_page_ref_and_ignores_hidden_login_control
     assert wrong_page["status"] == "page_not_open"
 
 
+def test_page_inventory_ignores_non_contract_hosts_before_reading_titles(monkeypatch):
+    website = load_contract().website("kmuh_eirb")
+    outside = _Page("https://example.org/private", {})
+    allowed = _ActionPage()
+    controller = BrowserController("http://127.0.0.1:9")
+
+    async def connect():
+        return _Browser([outside, allowed])
+
+    monkeypatch.setattr(controller, "connect", connect)
+    pages = asyncio.run(controller.list_pages(website))
+
+    assert len(pages) == 1
+    assert pages[0]["site_id"] == "kmuh_eirb"
+    assert pages[0]["page_ref"] == "c0p1"
+    assert pages[0]["url"].startswith("https://erec.kmuh.org.tw/")
+    assert "example.org" not in str(pages)
+
+
 def test_visible_login_control_requires_human_login(monkeypatch):
     website = load_contract().website("kmuh_eirb")
     login = _Page(

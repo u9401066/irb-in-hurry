@@ -18,6 +18,7 @@ def test_mcp_surface_has_discovery_and_no_submit_or_delete_tools():
 
     assert "irb_contract_summary" in names
     assert "irb_requirements" in names
+    assert "irb_browser_list_pages" in names
     assert "irb_discover_current_page" in names
     assert "irb_sanitized_page_mapping" in names
     assert "irb_click_reviewed_control" in names

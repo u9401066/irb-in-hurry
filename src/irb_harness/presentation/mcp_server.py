@@ -68,9 +68,12 @@ def irb_browser_bridge_status() -> dict[str, Any]:
 
 
 @mcp.tool()
-async def irb_browser_list_pages() -> list[dict[str, str | int]]:
-    """List open pages with redacted URLs and hashed titles; reads no form values."""
-    return await _browser.list_pages()
+async def irb_browser_list_pages(
+    site_id: str = "kmuh_eirb", organization_id: str = "kmuh"
+) -> list[dict[str, str | int]]:
+    """List selected-site pages only, with redacted URLs and hashed titles."""
+    contract = load_contract(organization_id=organization_id)
+    return await _browser.list_pages(contract.website(site_id))
 
 
 @mcp.tool()

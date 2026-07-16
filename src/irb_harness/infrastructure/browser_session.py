@@ -155,17 +155,23 @@ class BrowserController:
             ) from exc
         return self._browser
 
-    async def list_pages(self) -> list[dict[str, str | int]]:
+    async def list_pages(self, website: WebSiteContract) -> list[dict[str, str | int]]:
+        """List only pages allowed by one site contract, without reading values."""
         browser = await self.connect()
         pages: list[dict[str, str | int]] = []
         for context_index, context in enumerate(browser.contexts):
             for page_index, page in enumerate(context.pages):
+                try:
+                    assert_allowed_url(page.url, website)
+                except BrowserPolicyError:
+                    continue
                 try:
                     title = await page.title()
                 except Exception:
                     title = ""
                 pages.append(
                     {
+                        "site_id": website.site_id,
                         "page_ref": f"c{context_index}p{page_index}",
                         "title_sha256": hashlib.sha256(
                             title.encode("utf-8")

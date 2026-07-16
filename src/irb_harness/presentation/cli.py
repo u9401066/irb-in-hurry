@@ -146,8 +146,11 @@ def build_parser() -> argparse.ArgumentParser:
     browser_status.add_argument("--endpoint")
 
     list_pages = subcommands.add_parser(
-        "list-pages", help="list open pages without titles or form values"
+        "list-pages", help="list selected-site pages without titles or form values"
     )
+    list_pages.add_argument("--contract")
+    list_pages.add_argument("--organization", default="kmuh")
+    list_pages.add_argument("--site", default="kmuh_eirb")
     list_pages.add_argument("--endpoint")
 
     session_status = subcommands.add_parser(
@@ -416,9 +419,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 0
     if args.command == "list-pages":
+        contract = load_contract(args.contract, organization_id=args.organization)
         print(
             json.dumps(
-                asyncio.run(BrowserController(args.endpoint).list_pages()),
+                asyncio.run(
+                    BrowserController(args.endpoint).list_pages(
+                        contract.website(args.site)
+                    )
+                ),
                 ensure_ascii=False,
                 indent=2,
             )
