@@ -421,3 +421,12 @@ def test_reviewed_draft_fill_rechecks_mapping_and_returns_only_value_hash(monkey
             )
         )
     assert page.field.filled == "測試計畫"
+
+
+def test_discovery_script_requires_unique_dom_relative_selectors():
+    script = browser_session._DISCOVERY_SCRIPT
+
+    assert "matches.length === 1 && matches[0] === element" in script
+    assert "sameTagSiblings.indexOf(current) + 1" in script
+    assert "segments.join(' > ')" in script
+    assert "controls.map((element, index)" not in script

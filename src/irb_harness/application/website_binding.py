@@ -79,14 +79,25 @@ def bind_requirement_to_control(
     control = matches[0]
     if control.get("tag") not in {"input", "select", "textarea"}:
         raise WebsiteBindingError("portal requirement must bind to a field control")
-    if control.get("type") in {"hidden", "password", "submit", "button"}:
+    if control.get("type") in {
+        "button",
+        "file",
+        "hidden",
+        "image",
+        "password",
+        "radio",
+        "reset",
+        "submit",
+    }:
         raise WebsiteBindingError(
             f"field control type cannot be bound: {control.get('type')}"
         )
-    if control.get("disabled") is True:
-        raise WebsiteBindingError("disabled field controls cannot be bound")
-    if control.get("action_risk") in {"submit", "destructive"}:
-        raise WebsiteBindingError("submit or destructive controls cannot be bound")
+    if control.get("disabled") is True or control.get("readonly") is True:
+        raise WebsiteBindingError("disabled or readonly field controls cannot be bound")
+    if control.get("action_risk") != "draft_write":
+        raise WebsiteBindingError(
+            "portal requirement controls must be reviewed as draft_write"
+        )
 
     existing_control_owner = next(
         (

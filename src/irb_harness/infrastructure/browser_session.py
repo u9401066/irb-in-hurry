@@ -723,18 +723,63 @@ _DISCOVERY_SCRIPT = """
     }
     return normalize(element.placeholder || element.innerText || element.name || element.id);
   };
-  const selectorFor = (element, index) => {
-    if (element.id) return '#' + CSS.escape(element.id);
-    if (element.name) return element.tagName.toLowerCase() + '[name="' + CSS.escape(element.name) + '"]';
-    return element.tagName.toLowerCase() + ':nth-of-type(' + (index + 1) + ')';
+  const isUniqueFor = (selector, element) => {
+    try {
+      const matches = document.querySelectorAll(selector);
+      return matches.length === 1 && matches[0] === element;
+    } catch (_error) {
+      return false;
+    }
   };
-  return controls.map((element, index) => ({
+  const selectorFor = (element) => {
+    const tag = element.tagName.toLowerCase();
+    if (element.id) {
+      const idSelector = '#' + CSS.escape(element.id);
+      if (isUniqueFor(idSelector, element)) return idSelector;
+    }
+    if (element.name) {
+      const nameSelector = tag + '[name="' + CSS.escape(element.name) + '"]';
+      if (isUniqueFor(nameSelector, element)) return nameSelector;
+    }
+    const segments = [];
+    let current = element;
+    while (current && current.nodeType === 1) {
+      const currentTag = current.tagName.toLowerCase();
+      if (current.id) {
+        const anchor = '#' + CSS.escape(current.id);
+        if (document.querySelectorAll(anchor).length === 1) {
+          segments.unshift(anchor);
+          const anchored = segments.join(' > ');
+          if (isUniqueFor(anchored, element)) return anchored;
+        }
+      }
+      const parent = current.parentElement;
+      if (!parent) {
+        segments.unshift(currentTag);
+        break;
+      }
+      const sameTagSiblings = Array.from(parent.children).filter(
+        (sibling) => sibling.tagName === current.tagName
+      );
+      const siblingIndex = sameTagSiblings.indexOf(current) + 1;
+      const segment = sameTagSiblings.length === 1
+        ? currentTag
+        : currentTag + ':nth-of-type(' + siblingIndex + ')';
+      segments.unshift(segment);
+      const candidate = segments.join(' > ');
+      if (isUniqueFor(candidate, element)) return candidate;
+      current = parent;
+    }
+    const fallback = segments.join(' > ');
+    return isUniqueFor(fallback, element) ? fallback : null;
+  };
+  return controls.map((element) => ({
     tag: element.tagName.toLowerCase(),
     type: (element.getAttribute('type') || '').toLowerCase(),
     id: element.id || null,
     name: element.getAttribute('name') || null,
     label: labelFor(element),
-    selector: selectorFor(element, index),
+    selector: selectorFor(element),
     required: Boolean(element.required),
     disabled: Boolean(element.disabled),
     readonly: Boolean(element.readOnly),

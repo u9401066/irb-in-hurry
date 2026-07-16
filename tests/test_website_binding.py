@@ -19,7 +19,12 @@ from irb_harness.infrastructure.contract_loader import (
 )
 
 
-def _discovery(action_risk: str = "read"):
+def _discovery(
+    action_risk: str = "draft_write",
+    *,
+    element_type: str = "text",
+    readonly: bool = False,
+):
     return {
         "site_id": "kmuh_eirb",
         "title_sha256": "a" * 64,
@@ -30,12 +35,12 @@ def _discovery(action_risk: str = "read"):
         "controls": [
             {
                 "tag": "input",
-                "type": "text",
+                "type": element_type,
                 "label": "計畫名稱",
                 "selector": "#PlanName",
                 "required": True,
                 "disabled": False,
-                "readonly": False,
+                "readonly": readonly,
                 "option_count": None,
                 "action_risk": action_risk,
             }
@@ -123,9 +128,57 @@ def test_portal_requirement_rejects_destructive_mapped_control(tmp_path):
             cache_root=tmp_path / "cache",
         )
     except WebsiteBindingError as exc:
-        assert "submit or destructive" in str(exc)
+        assert "reviewed as draft_write" in str(exc)
     else:
         raise AssertionError("destructive control binding must be rejected")
+
+
+@pytest.mark.parametrize(
+    "element_type",
+    ["button", "file", "hidden", "image", "password", "radio", "reset", "submit"],
+)
+def test_portal_requirement_rejects_runtime_unfillable_control_types(
+    tmp_path, element_type
+):
+    discovery = _discovery(element_type=element_type)
+    mapping = sanitize_page_discovery(discovery)
+    mapping_path = (
+        tmp_path / "maps" / "kmuh" / "kmuh_eirb" / f"{mapping['mapping_sha256']}.json"
+    )
+    write_page_mapping(discovery, mapping_path)
+
+    with pytest.raises(WebsiteBindingError, match="type cannot be bound"):
+        bind_requirement_to_control(
+            _contract_with_portal_requirement(),
+            requirement_id="kmuh_portal_plan_name",
+            site_id="kmuh_eirb",
+            mapping_sha256=mapping["mapping_sha256"],
+            control_id=mapping["controls"][0]["control_id"],
+            output_path=tmp_path / "invalid.yml",
+            mapping_root=tmp_path / "maps",
+            cache_root=tmp_path / "cache",
+        )
+
+
+def test_portal_requirement_rejects_readonly_control(tmp_path):
+    discovery = _discovery(readonly=True)
+    mapping = sanitize_page_discovery(discovery)
+    mapping_path = (
+        tmp_path / "maps" / "kmuh" / "kmuh_eirb" / f"{mapping['mapping_sha256']}.json"
+    )
+    write_page_mapping(discovery, mapping_path)
+
+    with pytest.raises(WebsiteBindingError, match="disabled or readonly"):
+        bind_requirement_to_control(
+            _contract_with_portal_requirement(),
+            requirement_id="kmuh_portal_plan_name",
+            site_id="kmuh_eirb",
+            mapping_sha256=mapping["mapping_sha256"],
+            control_id=mapping["controls"][0]["control_id"],
+            output_path=tmp_path / "invalid.yml",
+            mapping_root=tmp_path / "maps",
+            cache_root=tmp_path / "cache",
+        )
 
 
 def test_one_reviewed_control_cannot_bind_two_requirements(tmp_path):
